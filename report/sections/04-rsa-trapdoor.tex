@@ -1,0 +1,119 @@
+RSA is most naturally understood as a \textbf{trapdoor permutation} on the multiplicative group modulo a composite integer. The public key defines a function that is easy to evaluate, while the private key provides the hidden information required to invert it efficiently.
+
+\subsection{Key Generation}
+
+RSA begins by selecting two large distinct primes
+\[
+p \quad \text{and} \quad q,
+\]
+and forming the modulus
+\[
+N = pq.
+\]
+The Euler totient of $N$ is
+\[
+\varphi(N) = (p-1)(q-1).
+\]
+Next, one chooses a public exponent $e$ satisfying
+\[
+\gcd(e,\varphi(N)) = 1.
+\]
+Because $e$ is relatively prime to $\varphi(N)$, it has a multiplicative inverse modulo $\varphi(N)$. The private exponent $d$ is therefore defined by
+\[
+ed \equiv 1 \pmod{\varphi(N)}.
+\]
+Equivalently, there exists an integer $k$ such that
+\[
+ed = k\varphi(N) + 1.
+\]
+
+The public key is
+\[
+pk = (N,e),
+\]
+and the private key is
+\[
+sk = d.
+\]
+The factorization of $N$ is not published. This hidden factorization is what allows the private exponent to be computed in the first place.
+
+\subsection{Encryption}
+
+For a message $M$ in the multiplicative group $\mathbb{Z}_N^{\ast}$, RSA encryption is defined by
+\[
+C = M^e \bmod N.
+\]
+This is efficient even when $N$ is very large because modular exponentiation can be performed using repeated squaring.
+
+\subsection{Decryption}
+
+Decryption uses the private exponent $d$:
+\[
+M = C^d \bmod N.
+\]
+Since $C = M^e$, decryption computes
+\[
+C^d = (M^e)^d = M^{ed}.
+\]
+The correctness of RSA is therefore equivalent to showing that
+\[
+M^{ed} \equiv M \pmod{N}.
+\]
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (m) at (0,0) {$M$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.0cm,minimum height=0.9cm] (enc) at (4.3,0) {raise to $e$ mod $N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (c) at (8.8,0) {$C$};
+    \draw[->,thick] (m.east) -- (enc.west);
+    \draw[->,thick] (enc.east) -- (c.west);
+\end{tikzpicture}
+
+\vspace{0.5em}
+
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (c2) at (0,0) {$C$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (dec) at (4.5,0) {raise to $d$ mod $N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (m2) at (9.1,0) {$M$};
+    \draw[->,thick] (c2.east) -- (dec.west);
+    \draw[->,thick] (dec.east) -- (m2.west);
+\end{tikzpicture}
+\caption{RSA applies the public exponent in the forward direction and the private exponent in the inverse direction.}
+\end{figure}
+
+\subsection{Trapdoor Permutation Explanation}
+
+A \textbf{trapdoor permutation} is a bijection that is easy to compute but hard to invert without special information. RSA fits this pattern. The map
+\[
+M \mapsto M^e \bmod N
+\]
+is public and efficiently computable. However, inverting it amounts to extracting an $e$th root modulo $N$, which is believed to be computationally hard without the trapdoor information.
+
+The trapdoor is the secret exponent $d$, or equivalently the factorization of $N$. Once the factorization is known, one can compute $\varphi(N)$ and thereby determine $d$. Without that hidden structure, inversion is presumed to be infeasible for sufficiently large parameters.
+
+\subsection{Correctness Proof}
+
+The correctness proof follows directly from Euler's theorem. Since
+\[
+ed = k\varphi(N)+1,
+\]
+we have
+\[
+M^{ed} = M^{k\varphi(N)+1} = \left(M^{\varphi(N)}\right)^k \cdot M.
+\]
+If $M \in \mathbb{Z}_N^{\ast}$, then $\gcd(M,N)=1$, so Euler's theorem implies
+\[
+M^{\varphi(N)} \equiv 1 \pmod{N}.
+\]
+Substituting this into the previous expression gives
+\[
+M^{ed} \equiv 1^k \cdot M \equiv M \pmod{N}.
+\]
+Therefore,
+\[
+C^d \equiv (M^e)^d \equiv M \pmod{N},
+\]
+which proves that decryption correctly recovers the original message.
+
+This proof is important because it shows that RSA is not merely an algorithmic trick. Its correctness is rooted in number-theoretic structure, specifically the relationship between the exponents $e$ and $d$ modulo $\varphi(N)$.

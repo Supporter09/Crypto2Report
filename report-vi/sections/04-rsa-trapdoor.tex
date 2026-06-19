@@ -1,0 +1,119 @@
+RSA được hiểu tự nhiên nhất như một \textbf{trapdoor permutation} trên nhóm nhân modulo một số hợp thành. Khóa công khai xác định một hàm dễ tính theo chiều thuận, còn khóa bí mật cung cấp thông tin ẩn cần thiết để đảo ngược hàm đó một cách hiệu quả.
+
+\subsection{Sinh khóa}
+
+RSA bắt đầu bằng việc chọn hai số nguyên tố lớn phân biệt
+\[
+p \quad \text{và} \quad q,
+\]
+và hình thành mô-đun
+\[
+N = pq.
+\]
+Hàm phi Euler của $N$ là
+\[
+\varphi(N) = (p-1)(q-1).
+\]
+Tiếp theo, ta chọn số mũ công khai $e$ sao cho
+\[
+\gcd(e,\varphi(N)) = 1.
+\]
+Vì $e$ nguyên tố cùng nhau với $\varphi(N)$, nó có nghịch đảo nhân modulo $\varphi(N)$. Số mũ bí mật $d$ được xác định bởi
+\[
+ed \equiv 1 \pmod{\varphi(N)}.
+\]
+Tương đương, tồn tại một số nguyên $k$ sao cho
+\[
+ed = k\varphi(N) + 1.
+\]
+
+Khóa công khai là
+\[
+pk = (N,e),
+\]
+và khóa bí mật là
+\[
+sk = d.
+\]
+Phép phân tích thừa số của $N$ không được công bố. Chính phép phân tích ẩn này cho phép tính được số mũ bí mật ngay từ đầu.
+
+\subsection{Mã hóa}
+
+Với một thông điệp $M$ thuộc nhóm nhân $\mathbb{Z}_N^{\ast}$, phép mã hóa RSA được định nghĩa bởi
+\[
+C = M^e \bmod N.
+\]
+Phép tính này hiệu quả ngay cả khi $N$ rất lớn, vì lũy thừa modulo có thể được thực hiện bằng kỹ thuật bình phương lặp.
+
+\subsection{Giải mã}
+
+Giải mã sử dụng số mũ bí mật $d$:
+\[
+M = C^d \bmod N.
+\]
+Vì $C = M^e$, quá trình giải mã thực chất tính
+\[
+C^d = (M^e)^d = M^{ed}.
+\]
+Do đó, tính đúng đắn của RSA tương đương với việc chứng minh rằng
+\[
+M^{ed} \equiv M \pmod{N}.
+\]
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (m) at (0,0) {$M$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (enc) at (4.5,0) {lũy thừa $e$ mod $N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (c) at (8.8,0) {$C$};
+    \draw[->,thick] (m.east) -- (enc.west);
+    \draw[->,thick] (enc.east) -- (c.west);
+\end{tikzpicture}
+
+\vspace{0.5em}
+
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (c2) at (0,0) {$C$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (dec) at (4.6,0) {lũy thừa $d$ mod $N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (m2) at (9.1,0) {$M$};
+    \draw[->,thick] (c2.east) -- (dec.west);
+    \draw[->,thick] (dec.east) -- (m2.west);
+\end{tikzpicture}
+\caption{RSA áp dụng số mũ công khai theo chiều thuận và số mũ bí mật theo chiều đảo ngược.}
+\end{figure}
+
+\subsection{Giải thích trapdoor permutation}
+
+\textbf{Trapdoor permutation} là một song ánh dễ tính theo chiều thuận nhưng khó đảo ngược nếu không có thông tin đặc biệt. RSA phù hợp với mô hình này. Ánh xạ
+\[
+M \mapsto M^e \bmod N
+\]
+là công khai và có thể tính hiệu quả. Tuy nhiên, việc đảo ngược nó tương đương với việc trích xuất căn bậc $e$ modulo $N$, điều được tin là khó về mặt tính toán nếu không có thông tin cửa sập.
+
+Cửa sập ở đây là số mũ bí mật $d$, hay tương đương là phép phân tích thừa số của $N$. Một khi phép phân tích đó được biết, ta có thể tính $\varphi(N)$ và từ đó suy ra $d$. Nếu thiếu cấu trúc ẩn này, việc đảo ngược được giả định là bất khả thi trong thời gian hiệu quả với các tham số đủ lớn.
+
+\subsection{Chứng minh tính đúng đắn}
+
+Chứng minh tính đúng đắn của RSA suy ra trực tiếp từ định lý Euler. Vì
+\[
+ed = k\varphi(N)+1,
+\]
+ta có
+\[
+M^{ed} = M^{k\varphi(N)+1} = \left(M^{\varphi(N)}\right)^k \cdot M.
+\]
+Nếu $M \in \mathbb{Z}_N^{\ast}$, thì $\gcd(M,N)=1$, nên theo định lý Euler,
+\[
+M^{\varphi(N)} \equiv 1 \pmod{N}.
+\]
+Thay vào biểu thức trên, ta được
+\[
+M^{ed} \equiv 1^k \cdot M \equiv M \pmod{N}.
+\]
+Do đó,
+\[
+C^d \equiv (M^e)^d \equiv M \pmod{N},
+\]
+và việc giải mã thực sự thu lại đúng thông điệp gốc.
+
+Chứng minh này quan trọng vì nó cho thấy RSA không đơn thuần là một mẹo thuật toán. Tính đúng đắn của nó bắt nguồn từ cấu trúc của lý thuyết số, cụ thể là mối quan hệ giữa $e$ và $d$ theo modulo $\varphi(N)$.

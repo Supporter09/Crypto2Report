@@ -1,0 +1,72 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{fontspec}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usetikzlibrary{arrows.meta,calc,positioning}
+\setmainfont{Times New Roman}
+
+\setstretch{1.15}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\setlist[itemize]{leftmargin=1.5em}
+
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+
+\title{Mã hóa khóa công khai và RSA}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    {\Large Báo cáo Chương 12\par}
+    \vspace{1.0cm}
+    {\LARGE \textbf{Mã hóa khóa công khai và RSA}\par}
+    \vspace{0.5cm}
+    {\large Theory, security và các tấn công trong thực tế\par}
+    \vspace{1.5cm}
+    
+    \begin{tabular}{rl}
+        Chủ đề học phần: & Chương 12 --- Mã hóa khóa công khai và RSA \\
+        Ngày soạn: & \today \\
+    \end{tabular}
+    \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Giới thiệu về Mã hóa khóa công khai}
+\input{sections/01-introduction}
+
+\section{Cơ sở toán học}
+\input{sections/02-mathematical-background}
+
+\section{ElGamal Cryptosystem}
+\input{sections/03-elgamal}
+
+\section{RSA Trapdoor Permutation}
+\input{sections/04-rsa-trapdoor}
+
+\section{Vì sao Textbook RSA không an toàn}
+\input{sections/05-textbook-rsa-insecurity}
+
+\section{RSA Padding và mã hóa RSA an toàn}
+\input{sections/06-rsa-padding}
+
+\section{Tình huống tấn công thực tế: Tấn công Bleichenbacher}
+\input{sections/07-bleichenbacher}
+
+\section{Kết luận}
+\input{sections/08-conclusion}
+
+\end{document}

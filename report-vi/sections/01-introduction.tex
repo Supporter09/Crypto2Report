@@ -1,0 +1,74 @@
+Mã hóa khóa công khai ra đời nhằm giải quyết một hạn chế cơ bản của mã hóa đối xứng: \textbf{phân phối khóa bí mật ở quy mô lớn}. Trong một hệ đối xứng, hai bên phải cùng chia sẻ cùng một khóa bí mật trước khi có thể bắt đầu liên lạc bảo mật. Yêu cầu này có thể chấp nhận được trong môi trường nhỏ và được kiểm soát chặt chẽ, nhưng nó trở nên ngày càng khó khăn khi số lượng đối tượng liên lạc tăng lên. Nếu một mạng có $n$ người dùng và mỗi cặp người dùng cần một khóa đối xứng riêng biệt, thì tổng số khóa cần quản lý là
+\[
+\frac{n(n-1)}{2}.
+\]
+Sự tăng trưởng theo bậc hai này tạo ra gánh nặng vận hành rất lớn, bởi vì mỗi khóa bí mật đều phải được sinh ra, trao đổi, lưu trữ và thay mới định kỳ thông qua một kênh an toàn.
+
+\textbf{Bài toán phân phối khóa} không chỉ là một bất tiện; nó là một trở ngại mang tính cấu trúc đối với liên lạc bảo mật quy mô lớn. Nếu quá trình trao đổi khóa đối xứng ban đầu bị chặn bắt hoặc bị can thiệp, tính bí mật của toàn bộ các thông điệp về sau sẽ bị phá vỡ. Vì vậy, độ an toàn của hệ thống phụ thuộc vào việc thiết lập bí mật trước cả khi mã hóa bắt đầu. Mã hóa khóa công khai đưa ra một mô hình khác, giảm bớt sự phụ thuộc vào việc chia sẻ trước một khóa bí mật.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[x=0.95cm,y=0.72cm,>=Latex]
+    \draw[->] (0,0) -- (6.8,0) node[right]{Số lượng người dùng $n$};
+    \draw[->] (0,0) -- (0,5.8) node[above]{Số khóa đối xứng};
+
+    \draw[thick,blue!70!black,domain=0.8:6,smooth,samples=100]
+        plot (\x,{0.12*\x*\x + 0.08*\x});
+
+    \foreach \x/\label in {1/10,2/20,3/30,4/40,5/50,6/60}
+        \draw (\x,0.08) -- (\x,-0.08) node[below=4pt]{\label};
+
+    \foreach \y/\label in {1/100,2/200,3/300,4/400,5/500}
+        \draw (0.08,\y) -- (-0.08,\y) node[left=4pt]{\label};
+
+\end{tikzpicture}
+
+\vspace{0.5em}
+
+\fbox{%
+\begin{minipage}{0.9\linewidth}
+\textbf{Tăng trưởng bậc hai:} trong một mạng mã hóa đối xứng có $n$ người dùng, số khóa chia sẻ phân biệt là
+\[
+\frac{n(n-1)}{2}.
+\]
+Khi số người dùng tăng lên, hệ thống phải quản lý nhiều khóa bí mật hơn một cách rất nhanh.
+
+\textcolor{red!70!black}{\textbf{Quá tải vận hành:} mỗi khóa bổ sung đều phải được sinh ra, trao đổi an toàn, lưu trữ, bảo vệ và cuối cùng là luân chuyển hoặc thay thế.}
+\end{minipage}%
+}
+
+\vspace{1.1em}
+
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (alice) at (0,0) {Người gửi};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.0cm,minimum height=0.9cm] (pk) at (5.1,0) {Khóa công khai $pk$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (bob) at (11.5,0) {Người nhận};
+
+    \draw[->,thick] (alice.east) -- node[above,yshift=2pt]{mã hóa} (pk.west);
+    \draw[->,thick] (pk.east) -- node[above,yshift=2pt]{phân phối công khai} (bob.west);
+\end{tikzpicture}
+
+\vspace{0.4em}
+
+\fbox{%
+\begin{minipage}{0.82\linewidth}
+\centering
+\textbf{Mô hình khóa công khai:} một khóa công khai có thể được phân phối công khai, trong khi chỉ khóa bí mật $sk$ phải được giữ kín.
+\end{minipage}%
+}
+\caption{Mô hình đối xứng mở rộng kém do số khóa chia sẻ tăng theo bậc hai, trong khi mô hình khóa công khai tách biệt việc phân phối công khai khỏi quyền giải mã bí mật.}
+\end{figure}
+
+Trong bối cảnh khóa công khai, mỗi người dùng sinh ra một cặp khóa liên hệ với nhau về mặt toán học: \textbf{khóa công khai}, có thể được phân phối rộng rãi, và \textbf{khóa bí mật}, phải được giữ kín. Ký hiệu khóa công khai là $pk$ và khóa bí mật là $sk$. Mô hình mã hóa tổng quát có thể viết là
+\[
+c = \operatorname{Enc}_{pk}(m)
+\]
+để mã hóa thông điệp $m$ thành bản mã $c$, và
+\[
+m = \operatorname{Dec}_{sk}(c)
+\]
+để giải mã bằng khóa bí mật tương ứng. Ý tưởng cốt lõi là bất kỳ ai cũng có thể mã hóa thông điệp bằng khóa công khai, nhưng chỉ người nắm giữ khóa bí mật mới có thể khôi phục bản rõ một cách hiệu quả. Sự tách biệt giữa khóa mã hóa được công khai và khóa giải mã được giữ kín chính là bước tiến khái niệm trung tâm của mã hóa khóa công khai.
+
+Ý nghĩa của mô hình này thể hiện ở hai điểm. Thứ nhất, nó đơn giản hóa liên lạc bảo mật giữa các bên chưa từng gặp nhau hoặc chưa từng trao đổi trước bí mật. Người gửi chỉ cần có khóa công khai của người nhận là đã có thể mã hóa thông điệp một cách an toàn. Thứ hai, nó đặt nền tảng cho \textbf{các hệ thống liên lạc bảo mật hiện đại trên mạng mở}. Mặc dù các giao thức thực tế thường kết hợp kỹ thuật khóa công khai và đối xứng để đạt hiệu năng cao, khuôn khổ khóa công khai giải quyết bài toán thiết lập niềm tin và khóa ban đầu mà mã hóa đối xứng đơn lẻ không xử lý thuận tiện.
+
+Xét về mặt khái niệm, mã hóa khóa công khai chuyển câu hỏi từ ``Làm thế nào để hai bên bí mật chia sẻ cùng một khóa?'' thành ``Làm thế nào để một bên công bố đủ thông tin cho phép mã hóa mà vẫn không lộ khả năng giải mã?'' Sự chuyển đổi này dẫn trực tiếp đến việc nghiên cứu các cấu trúc dựa trên lý thuyết số như ElGamal và RSA, trong đó an toàn được xây dựng trên \textbf{các giả thuyết độ khó tính toán} thay vì sự bí mật của một kênh chia sẻ từ trước. Vì lý do đó, mã hóa khóa công khai là một chủ đề nền tảng của mật mã hiện đại và là điểm khởi đầu thiết yếu để hiểu các hệ thống được trình bày trong Chương 12.

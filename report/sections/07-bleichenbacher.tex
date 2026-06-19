@@ -1,0 +1,77 @@
+Among the most influential practical attacks on RSA encryption is the \textbf{Bleichenbacher attack} from 1998. It targeted implementations of RSA with PKCS\#1 v1.5 padding and demonstrated that even mathematically strong primitives can fail when an implementation leaks small amounts of information about decrypted data.
+
+\subsection{Background}
+
+PKCS\#1 v1.5 was widely used in early web and protocol implementations. A valid decrypted block for encryption had to begin with a specific format, typically
+\[
+02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+\]
+Servers often checked whether the decrypted block satisfied this rule before continuing the protocol. If the padding was invalid, the implementation might terminate with an error or respond differently from the valid case.
+
+This difference in behavior created the opening for Bleichenbacher's attack. The attacker did not need the private key, nor did the attacker need to break RSA directly. Instead, the attacker exploited the server's reaction to carefully modified ciphertexts.
+
+\subsection{Oracle Idea}
+
+The attack relies on a \textbf{padding oracle}. A padding oracle is any mechanism that tells the attacker whether a decrypted plaintext satisfies the required PKCS\#1 structure. For example:
+
+\begin{itemize}
+\item valid padding $\rightarrow$ the server continues processing,
+\item invalid padding $\rightarrow$ the server returns an error or behaves differently.
+\end{itemize}
+
+Even this single bit of information is enough to be dangerous. Each oracle response reveals whether the unknown plaintext lies inside or outside a particular set of values compatible with valid PKCS formatting.
+
+\subsection{Attack Flow}
+
+Suppose the attacker intercepts a target ciphertext
+\[
+C = M^e \bmod N.
+\]
+The attacker then chooses a multiplier $s$ and forms a modified ciphertext
+\[
+C' = C \cdot s^e \bmod N.
+\]
+When the server decrypts $C'$, it obtains
+\[
+M' = Ms \bmod N.
+\]
+The oracle response tells the attacker whether $M'$ has valid PKCS\#1 v1.5 formatting.
+
+This process is repeated many times with carefully chosen values of $s$. Each successful or unsuccessful query narrows the interval in which the original plaintext $M$ must lie. Over time, the attacker intersects these intervals until only one plausible plaintext remains. The attack is therefore not a direct algebraic inversion of RSA; it is an adaptive narrowing process driven by oracle feedback.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.7cm,minimum height=0.9cm] (att) at (0,0) {Attacker};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (mod) at (4.4,0) {modify $C$ to $C'$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (srv) at (8.6,0) {Server};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.0cm,minimum height=0.9cm] (resp) at (12.9,0) {valid or invalid?};
+    \draw[->,thick] (att.east) -- (mod.west);
+    \draw[->,thick] (mod.east) -- node[above]{$C'$} (srv.west);
+    \draw[->,thick] (srv.east) -- (resp.west);
+\end{tikzpicture}
+
+\vspace{0.5em}
+
+\fbox{%
+\begin{minipage}{0.86\linewidth}
+\centering
+\textbf{Core idea:} each oracle response leaks whether the hidden plaintext falls inside a valid PKCS\#1 interval, allowing the attacker to shrink the set of possible messages until the original plaintext is recovered.
+\end{minipage}%
+}
+\caption{Bleichenbacher's attack turns a validity check into a decryption oracle.}
+\end{figure}
+
+\subsection{Why This Matters}
+
+The Bleichenbacher attack matters because it changed how practitioners think about encryption security. The RSA function itself was not broken. Instead, the failure came from the interaction between:
+
+\begin{itemize}
+\item structured padding,
+\item an implementation that checked validity, and
+\item an externally visible difference in behavior.
+\end{itemize}
+
+This is a powerful lesson in cryptography. A system may be built from strong mathematical components, yet still become insecure if its implementation leaks partial information. In modern security engineering, resistance to side channels, error-message leakage, and adaptive chosen-ciphertext behavior is just as important as the hardness of the underlying number-theoretic problem.
+
+For this reason, Bleichenbacher's attack is more than a historical curiosity. It is a classic example of how \textbf{implementation-level leakage can completely defeat a mathematically sound primitive}, and it strongly motivated the move toward more robust padding schemes such as OAEP.

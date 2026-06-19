@@ -1,0 +1,74 @@
+Public key cryptography was introduced to address a fundamental limitation of symmetric encryption: \textbf{secure key distribution at scale}. In a symmetric system, two parties must share the same secret key before confidential communication can begin. This requirement is manageable in a small and tightly controlled setting, but it becomes increasingly difficult as the number of communicating participants grows. If a network contains $n$ users and every pair requires a distinct symmetric key, then the total number of shared keys is
+\[
+\frac{n(n-1)}{2}.
+\]
+This quadratic growth creates substantial operational overhead, since each secret key must be generated, transmitted, stored, and periodically replaced through a secure channel.
+
+The \textbf{key distribution problem} is not merely an inconvenience; it is a structural obstacle to large-scale secure communication. If the initial exchange of the symmetric key is intercepted or manipulated, then the confidentiality of all subsequent messages is compromised. Consequently, the security of the entire system depends on establishing secret material before encryption can even begin. Public key cryptography offers a different model that reduces this dependency on prior secret sharing.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[x=0.95cm,y=0.72cm,>=Latex]
+    \draw[->] (0,0) -- (6.8,0) node[right]{Number of users $n$};
+    \draw[->] (0,0) -- (0,5.8) node[above]{Number of symmetric keys};
+
+    \draw[thick,blue!70!black,domain=0.8:6,smooth,samples=100]
+        plot (\x,{0.12*\x*\x + 0.08*\x});
+
+    \foreach \x/\label in {1/10,2/20,3/30,4/40,5/50,6/60}
+        \draw (\x,0.08) -- (\x,-0.08) node[below=4pt]{\label};
+
+    \foreach \y/\label in {1/100,2/200,3/300,4/400,5/500}
+        \draw (0.08,\y) -- (-0.08,\y) node[left=4pt]{\label};
+
+\end{tikzpicture}
+
+\vspace{0.5em}
+
+\fbox{%
+\begin{minipage}{0.9\linewidth}
+\textbf{Quadratic growth:} in a symmetric-key network with $n$ users, the number of distinct shared keys is
+\[
+\frac{n(n-1)}{2}.
+\]
+As the number of users increases, the system must manage many more secret keys.
+
+\textcolor{red!70!black}{\textbf{Operational overload:} each additional key must be generated, exchanged securely, stored, protected, and eventually rotated or replaced.}
+\end{minipage}%
+}
+
+\vspace{1.1em}
+
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (alice) at (0,0) {Sender};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.0cm,minimum height=0.9cm] (pk) at (5.1,0) {Public key $pk$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (bob) at (11.5,0) {Receiver};
+
+    \draw[->,thick] (alice.east) -- node[above,yshift=2pt]{encrypt} (pk.west);
+    \draw[->,thick] (pk.east) -- node[above,yshift=2pt]{open distribution} (bob.west);
+\end{tikzpicture}
+
+\vspace{0.4em}
+
+\fbox{%
+\begin{minipage}{0.82\linewidth}
+\centering
+\textbf{Public key model:} one public key can be distributed openly, while only the private key $sk$ must remain secret.
+\end{minipage}%
+}
+\caption{The symmetric-key model scales poorly because the number of shared secrets grows quadratically, whereas the public key model separates public distribution from private decryption authority.}
+\end{figure}
+
+In the public key setting, each user generates a pair of mathematically related keys: a \textbf{public key}, which may be distributed openly, and a \textbf{private key}, which must remain secret. Let the public key be denoted by $pk$ and the private key by $sk$. The general encryption model can be written as
+\[
+c = \operatorname{Enc}_{pk}(m)
+\]
+for the encryption of a message $m$ into a ciphertext $c$, and
+\[
+m = \operatorname{Dec}_{sk}(c)
+\]
+for decryption using the corresponding private key. The essential idea is that anyone may encrypt a message with the public key, but only the holder of the private key can efficiently recover the plaintext. This separation between an openly shared encryption key and a secret decryption key is the central conceptual advance of public key cryptography.
+
+The significance of this model is twofold. First, it simplifies secure communication between parties who have never met or exchanged a secret in advance. A sender only needs access to the receiver's public key in order to encrypt a message securely. Second, it provides the foundation for \textbf{modern secure communication across open networks}. Although practical protocols often combine public key and symmetric techniques for efficiency, the public key framework solves the initial trust and key-establishment problem that symmetric encryption alone cannot resolve conveniently.
+
+From a conceptual perspective, public key cryptography changes the question from ``How can two parties secretly share the same key?'' to ``How can one party publish enough information to enable encryption without revealing the ability to decrypt?'' This shift leads directly to the study of number-theoretic constructions such as ElGamal and RSA, where security is based on \textbf{computational hardness assumptions} rather than on the secrecy of a pre-shared channel. For this reason, public key cryptography is a foundational topic in modern cryptography and an essential starting point for understanding the systems developed in Chapter 12.

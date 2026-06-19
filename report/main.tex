@@ -1,0 +1,73 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usetikzlibrary{arrows.meta,calc,positioning}
+
+\setstretch{1.15}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\setlist[itemize]{leftmargin=1.5em}
+
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+
+\title{Public Key Cryptography and RSA}
+\author{}
+\date{\today}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    {\Large Chapter 12 Report\par}
+    \vspace{1.0cm}
+    {\LARGE \textbf{Public Key Cryptography and RSA}\par}
+    \vspace{0.5cm}
+    {\large Theory, Security, and Real-World Attacks\par}
+    \vspace{1.5cm}
+    
+    \begin{tabular}{rl}
+        Course Topic: & Chapter 12 --- Public Key Cryptography and RSA \\
+        Prepared: & \today \\
+    \end{tabular}
+    \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Introduction to Public Key Cryptography}
+\input{sections/01-introduction}
+
+\section{Mathematical Background}
+\input{sections/02-mathematical-background}
+
+\section{ElGamal Cryptosystem}
+\input{sections/03-elgamal}
+
+\section{RSA Trapdoor Permutation}
+\input{sections/04-rsa-trapdoor}
+
+\section{Why Textbook RSA is Insecure}
+\input{sections/05-textbook-rsa-insecurity}
+
+\section{RSA Padding and Secure RSA Encryption}
+\input{sections/06-rsa-padding}
+
+\section{Real-World Attack Case Study: Bleichenbacher Attack}
+\input{sections/07-bleichenbacher}
+
+\section{Conclusion}
+\input{sections/08-conclusion}
+
+\end{document}

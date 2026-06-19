@@ -1,0 +1,113 @@
+Mặc dù RSA cung cấp một trapdoor permutation rất đẹp về mặt toán học, \textbf{textbook RSA không phải là một sơ đồ mã hóa an toàn}. Hàm
+\[
+E(M) = M^e \bmod N
+\]
+là tất định và có cấu trúc đại số rõ rệt. Chính những tính chất này khiến nó dễ bị nhiều kiểu tấn công vi phạm bảo mật ngữ nghĩa và cho phép thao tác có chủ đích lên bản mã.
+
+\subsection{Mã hóa tất định}
+
+Trong một sơ đồ mã hóa an toàn, việc mã hóa cùng một thông điệp hai lần không nên để lộ rằng các bản rõ giống nhau. RSA giáo khoa thất bại ở yêu cầu này vì nó là tất định:
+\[
+E(M) = M^e \bmod N
+\]
+chỉ có đúng một đầu ra cho mỗi thông điệp $M$. Do đó, nếu đối thủ quan sát hai bản mã
+\[
+C_1 = E(M) \quad \text{và} \quad C_2 = E(M),
+\]
+thì tất yếu
+\[
+C_1 = C_2.
+\]
+Điều này ngay lập tức làm rò rỉ thông tin về tính bằng nhau. Đối thủ cũng có thể thực hiện tấn công từ điển đối với những thông điệp có thể dự đoán bằng cách tự mã hóa các ứng viên dưới khóa công khai rồi so sánh với bản mã quan sát được. Chỉ riêng lý do này đã đủ cho thấy textbook RSA \textbf{không đạt semantic security}.
+
+\subsection{Tấn công thông điệp nhỏ}
+
+Một điểm yếu khác xuất hiện khi bản rõ có giá trị số nhỏ. Giả sử
+\[
+M^e < N.
+\]
+Khi đó phép giảm modulo thực ra không làm thay đổi giá trị, và bản mã đơn giản là
+\[
+C = M^e
+\]
+trong số học thông thường. Khi ấy, đối thủ có thể khôi phục thông điệp bằng cách lấy căn bậc $e$ trong số nguyên:
+\[
+M = \sqrt[e]{C}.
+\]
+
+Kiểu tấn công này đặc biệt nguy hiểm khi số mũ công khai $e$ nhỏ và không gian bản rõ chứa các thông điệp ngắn hoặc có cấu trúc. Nó cho thấy tính đúng đắn đại số không đồng nghĩa với tính bí mật mật mã.
+
+\subsection{Tấn công dựa trên tính nhân}
+
+RSA giáo khoa còn bảo toàn phép nhân:
+\[
+E(M_1)\cdot E(M_2) \equiv M_1^e M_2^e \equiv (M_1M_2)^e \equiv E(M_1M_2) \pmod{N}.
+\]
+\textbf{Tính chất nhân} này có nghĩa là các bản mã có thể bị sửa đổi theo cách có ý nghĩa mà không cần biết bản rõ tương ứng. Nếu đối thủ nắm giữ bản mã $C = E(M)$ và chọn một giá trị $t$, thì
+\[
+C' = C \cdot E(t) \equiv E(Mt) \pmod{N}
+\]
+là một bản mã hợp lệ của bản rõ liên hệ $Mt$.
+
+Điều này phá vỡ trực giác cho rằng dữ liệu đã mã hóa cần chống lại các thao tác đại số có chủ đích. Ngay cả khi đối thủ không khôi phục hoàn toàn được thông điệp, việc có thể biến đổi bản mã thành một bản mã khác với ý nghĩa có thể dự đoán được đã là một thất bại nghiêm trọng về an toàn.
+
+\subsection{Ví dụ tấn công trong bài giảng}
+
+Ví dụ trong bài giảng minh họa cách một khóa phiên ngắn được mã hóa bằng RSA có thể bị tấn công nhanh hơn rất nhiều so với vét cạn. Giả sử trình duyệt mã hóa một khóa phiên 64 bit $K$ bằng RSA giáo khoa:
+\[
+C = K^e \bmod N.
+\]
+Giả sử thêm rằng
+\[
+K = K_1K_2
+\]
+với
+\[
+K_1, K_2 < 2^{34}.
+\]
+Khi đó
+\[
+C \equiv K_1^e K_2^e \pmod{N}.
+\]
+Đối thủ có thể dùng chiến lược meet-in-the-middle:
+
+\begin{enumerate}
+\item Tiền tính một bảng các giá trị từ một phía, chẳng hạn
+\[
+\frac{C}{K_1^e} \pmod{N}
+\]
+cho mọi ứng viên của $K_1$.
+\item Tính
+\[
+K_2^e \pmod{N}
+\]
+cho mọi ứng viên của $K_2$ và kiểm tra xem có giá trị nào khớp trong bảng hay không.
+\end{enumerate}
+
+Chiến lược này giảm đáng kể khối lượng tính toán so với việc vét cạn trực tiếp toàn bộ $2^{64}$ khả năng. Thay vì duyệt toàn bộ không gian khóa, đối thủ khai thác cấu trúc nhân của RSA để tách bài toán thành hai tìm kiếm nhỏ hơn.
+
+\begin{figure}[h]
+\centering
+\fbox{%
+\begin{minipage}{0.88\linewidth}
+\centering
+\textbf{Ý tưởng meet-in-the-middle cho khóa ngắn được mã hóa bằng RSA}
+
+\vspace{0.4em}
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.2cm,minimum height=0.9cm] (c) at (0,0) {$C=K^e$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (k1) at (4.2,0.9) {đoán $K_1$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (k2) at (4.2,-0.9) {đoán $K_2$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=0.9cm] (tab) at (8.9,0.9) {bảng $C/K_1^e$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=0.9cm] (chk) at (8.9,-0.9) {tính $K_2^e$ và đối chiếu};
+    \draw[->,thick] (c.east) -- (k1.west);
+    \draw[->,thick] (c.east) -- (k2.west);
+    \draw[->,thick] (k1.east) -- (tab.west);
+    \draw[->,thick] (k2.east) -- (chk.west);
+\end{tikzpicture}
+\end{minipage}%
+}
+\caption{Một không gian bản rõ có cấu trúc có thể khiến RSA giáo khoa bị tấn công nhanh hơn vét cạn.}
+\end{figure}
+
+Những tấn công này minh họa bài học trung tâm của phần này: \textbf{RSA với tư cách là một trapdoor permutation không tự động trở thành một sơ đồ mã hóa khóa công khai an toàn}. Cần có thêm bước tiền xử lý thích hợp để đưa ngẫu nhiên vào và loại bỏ cấu trúc đại số có thể bị khai thác.

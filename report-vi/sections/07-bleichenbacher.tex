@@ -1,0 +1,77 @@
+Một trong những tấn công thực tế có ảnh hưởng sâu rộng nhất đối với mã hóa RSA là \textbf{tấn công Bleichenbacher} năm 1998. Nó nhắm vào các cài đặt RSA sử dụng đệm PKCS\#1 v1.5 và cho thấy rằng ngay cả những nguyên thủy toán học mạnh cũng có thể thất bại khi cài đặt làm lộ một lượng nhỏ thông tin về bản rõ sau giải mã.
+
+\subsection{Bối cảnh}
+
+PKCS\#1 v1.5 từng được sử dụng rộng rãi trong các giao thức mạng và phần mềm thời kỳ đầu. Một khối hợp lệ sau khi giải mã phải bắt đầu bằng một định dạng xác định, thường là
+\[
+02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+\]
+Máy chủ thường kiểm tra xem khối sau giải mã có thỏa mãn định dạng này hay không trước khi tiếp tục giao thức. Nếu phần đệm không hợp lệ, cài đặt có thể dừng lại với lỗi hoặc phản hồi khác với trường hợp hợp lệ.
+
+Chính sự khác biệt trong hành vi này mở đường cho tấn công Bleichenbacher. Kẻ tấn công không cần khóa bí mật, cũng không cần phá trực tiếp RSA. Thay vào đó, họ khai thác phản ứng của máy chủ đối với những bản mã đã được sửa đổi một cách có chủ đích.
+
+\subsection{Ý tưởng oracle}
+
+Tấn công này dựa trên một \textbf{padding oracle}. Padding oracle là bất kỳ cơ chế nào cho phép kẻ tấn công biết liệu bản rõ sau giải mã có thỏa mãn định dạng PKCS yêu cầu hay không. Ví dụ:
+
+\begin{itemize}
+\item đệm hợp lệ $\rightarrow$ máy chủ tiếp tục xử lý,
+\item đệm không hợp lệ $\rightarrow$ máy chủ báo lỗi hoặc phản hồi khác đi.
+\end{itemize}
+
+Ngay cả một bit thông tin như vậy cũng đã đủ nguy hiểm. Mỗi phản hồi của oracle tiết lộ liệu bản rõ chưa biết có nằm trong hay ngoài tập các giá trị tương thích với định dạng PKCS hay không.
+
+\subsection{Diễn tiến tấn công}
+
+Giả sử kẻ tấn công chặn được bản mã mục tiêu
+\[
+C = M^e \bmod N.
+\]
+Kẻ tấn công sau đó chọn một hệ số $s$ và tạo bản mã sửa đổi
+\[
+C' = C \cdot s^e \bmod N.
+\]
+Khi máy chủ giải mã $C'$, nó thu được
+\[
+M' = Ms \bmod N.
+\]
+Phản hồi của oracle cho biết liệu $M'$ có định dạng PKCS\#1 v1.5 hợp lệ hay không.
+
+Quy trình này được lặp đi lặp lại nhiều lần với các giá trị $s$ được lựa chọn có chiến lược. Mỗi truy vấn thành công hay thất bại đều thu hẹp khoảng giá trị mà bản rõ gốc $M$ có thể thuộc về. Theo thời gian, kẻ tấn công giao các khoảng này với nhau cho đến khi chỉ còn lại một bản rõ hợp lý duy nhất. Vì vậy, đây không phải là một phép đảo trực tiếp RSA bằng đại số; nó là một quá trình thu hẹp thích nghi dựa trên phản hồi của oracle.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.7cm,minimum height=0.9cm] (att) at (0,0) {Kẻ tấn công};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (mod) at (4.4,0) {sửa $C$ thành $C'$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (srv) at (8.6,0) {Máy chủ};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.0cm,minimum height=0.9cm] (resp) at (12.9,0) {hợp lệ hay không?};
+    \draw[->,thick] (att.east) -- (mod.west);
+    \draw[->,thick] (mod.east) -- node[above]{$C'$} (srv.west);
+    \draw[->,thick] (srv.east) -- (resp.west);
+\end{tikzpicture}
+
+\vspace{0.5em}
+
+\fbox{%
+\begin{minipage}{0.82\linewidth}
+\centering
+\textbf{Ý tưởng cốt lõi:} mỗi phản hồi của oracle tiết lộ liệu bản rõ ẩn có nằm trong một khoảng PKCS\#1 hợp lệ hay không, từ đó cho phép kẻ tấn công thu hẹp dần tập các thông điệp khả dĩ cho đến khi khôi phục được bản rõ gốc.
+\end{minipage}%
+}
+\caption{Tấn công Bleichenbacher biến phép kiểm tra tính hợp lệ thành một oracle giải mã.}
+\end{figure}
+
+\subsection{Vì sao điều này quan trọng}
+
+Tấn công Bleichenbacher quan trọng vì nó thay đổi cách người ta nhìn nhận về an toàn của hệ mã. Bản thân hàm RSA không bị phá. Sự thất bại đến từ tương tác giữa:
+
+\begin{itemize}
+\item cấu trúc đệm,
+\item cài đặt có kiểm tra tính hợp lệ,
+\item và sự khác biệt hành vi có thể quan sát được từ bên ngoài.
+\end{itemize}
+
+Đây là một bài học mạnh mẽ trong mật mã học. Một hệ thống có thể được xây dựng từ những thành phần toán học rất mạnh, nhưng vẫn trở nên mất an toàn nếu cài đặt của nó làm rò rỉ thông tin từng phần. Trong kỹ nghệ an toàn hiện đại, khả năng chống side channel, chống rò rỉ qua thông báo lỗi và chống tấn công bản mã được chọn thích nghi quan trọng không kém gì độ khó của bài toán lý thuyết số nền tảng.
+
+Vì lý do đó, tấn công Bleichenbacher không chỉ là một ví dụ lịch sử. Nó là minh họa kinh điển cho việc \textbf{rò rỉ ở mức cài đặt có thể phá hủy hoàn toàn một nguyên thủy vốn mạnh về mặt toán học}, và nó đã thúc đẩy mạnh mẽ việc chuyển sang những cơ chế đệm vững chắc hơn như OAEP.

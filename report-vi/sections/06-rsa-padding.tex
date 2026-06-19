@@ -1,0 +1,67 @@
+Những điểm yếu của textbook RSA xuất hiện vì hàm thô
+\[
+M \mapsto M^e \bmod N
+\]
+là tất định và có cấu trúc đại số rõ ràng. Để biến RSA thành một sơ đồ mã hóa thực tế, cần phải biến đổi thông điệp trước bằng một quá trình mã hóa tiền xử lý ngẫu nhiên. Quá trình này được gọi là \textbf{padding}.
+
+\subsection{Vì sao cần đệm}
+
+Padding phục vụ hai mục tiêu thiết yếu. Thứ nhất, nó đưa vào \textbf{tính ngẫu nhiên}, bảo đảm rằng cùng một thông điệp không luôn luôn cho ra cùng một bản mã. Thứ hai, nó thêm \textbf{cấu trúc}, để những đầu vào bị sửa đổi hoặc sai định dạng có thể được phát hiện và từ chối.
+
+Về mặt khái niệm, đệm biến quá trình mã hóa từ
+\[
+C = M^e \bmod N
+\]
+thành
+\[
+C = \operatorname{RSA}(\operatorname{Pad}(M;r)),
+\]
+trong đó $r$ là ngẫu nhiên mới. Khi đó hàm RSA không còn áp dụng trực tiếp lên thông điệp gốc, mà áp dụng lên một biểu diễn đã được ngẫu nhiên hóa. Nhờ vậy, các phép kiểm tra bằng nhau đơn giản, tấn công từ điển và nhiều kiểu tấn công cấu trúc trở nên khó thực hiện hơn rất nhiều.
+
+\subsection{PKCS\#1 v1.5}
+
+Một sơ đồ đệm có ý nghĩa lịch sử quan trọng là \textbf{PKCS\#1 v1.5}. Trước khi mã hóa RSA, bản rõ được nhúng vào một khối có cấu trúc dạng
+\[
+02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+\]
+Các byte đầu tiên chỉ ra rằng khối này dành cho mã hóa, phần đệm ngẫu nhiên tạo ra tính không tất định, và byte phân cách xác định nơi thông điệp thực sự bắt đầu.
+
+Thiết kế này từng được triển khai rộng rãi trong thực tế và là một bước tiến lớn so với RSA giáo khoa. Tuy nhiên, về sau người ta chứng minh rằng nó có thể bị tấn công bản mã được chọn nếu cài đặt làm lộ thông tin về việc bản rõ sau giải mã có đúng định dạng PKCS\#1 hay không. Vì vậy, PKCS\#1 v1.5 cho thấy một bài học quan trọng trong mật mã: một quy tắc mã hóa trông có vẻ mạnh trên giấy vẫn có thể thất bại khi kết hợp với một cài đặt làm rò rỉ thông tin.
+
+\subsection{OAEP}
+
+Một thiết kế hiện đại và có cơ sở lý thuyết hơn là \textbf{Optimal Asymmetric Encryption Padding (OAEP)}. OAEP tiền xử lý thông điệp bằng ngẫu nhiên kết hợp với các phép che dựa trên hàm băm trước khi áp dụng phép lũy thừa RSA. Ở mức khái quát, nó:
+
+\begin{itemize}
+\item thêm ngẫu nhiên mới cho mỗi lần mã hóa,
+\item trộn thông điệp và hạt giống ngẫu nhiên thông qua các hàm sinh mặt nạ,
+\item tạo ra một đầu vào RSA có cấu trúc và khó bị thao tác có chủ đích.
+\end{itemize}
+
+Về mặt sơ đồ, OAEP có thể được hình dung như
+\[
+\text{message} + \text{random seed}
+\longrightarrow
+\text{masked block}
+\longrightarrow
+\text{RSA input}.
+\]
+Thiết kế này nhằm loại bỏ cả tính tất định lẫn sự minh bạch đại số đơn giản của textbook RSA.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.3cm,minimum height=0.9cm] (m) at (0,0) {thông điệp};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (r) at (3.8,0) {hạt giống ngẫu nhiên};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.5cm,minimum height=0.9cm] (mask) at (8.8,0) {che mặt nạ và băm};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.8cm,minimum height=0.9cm] (rsa) at (13.6,0) {đầu vào RSA};
+    \draw[->,thick] (m.east) -- (r.west);
+    \draw[->,thick] (r.east) -- (mask.west);
+    \draw[->,thick] (mask.east) -- (rsa.west);
+\end{tikzpicture}
+\caption{OAEP tiền xử lý bản rõ bằng ngẫu nhiên trước khi áp dụng phép RSA.}
+\end{figure}
+
+OAEP quan trọng vì nó đi kèm với các bảo đảm lý thuyết mạnh hơn. Trong mô hình random oracle, nó cung cấp khả năng chống lại tấn công bản mã được chọn tốt hơn đáng kể so với RSA giáo khoa và so với các cách mã hóa cũ mang tính chắp vá.
+
+Bài học rộng hơn là \textbf{mã hóa RSA an toàn không chỉ đơn giản là ``RSA cộng với một thông điệp''}. Nó là sự kết hợp giữa RSA và một thủ tục tiền xử lý ngẫu nhiên được thiết kế cẩn thận. Nếu thiếu bước tiền xử lý này, trapdoor permutation vẫn thú vị về mặt toán học nhưng không an toàn về mặt mật mã.

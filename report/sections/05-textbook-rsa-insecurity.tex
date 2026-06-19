@@ -1,0 +1,113 @@
+Although RSA provides a mathematically elegant trapdoor permutation, \textbf{textbook RSA is not a secure encryption scheme}. The function
+\[
+E(M) = M^e \bmod N
+\]
+is deterministic and algebraically structured. These properties make it vulnerable to several attacks that violate semantic security and permit direct ciphertext manipulation.
+
+\subsection{Deterministic Encryption}
+
+In a secure encryption scheme, encrypting the same message twice should not reveal that the plaintexts are identical. Textbook RSA fails this requirement because it is deterministic:
+\[
+E(M) = M^e \bmod N
+\]
+has exactly one output for each message $M$. Therefore, if an adversary sees two ciphertexts
+\[
+C_1 = E(M) \quad \text{and} \quad C_2 = E(M),
+\]
+then
+\[
+C_1 = C_2.
+\]
+This immediately leaks equality information. An attacker can also perform a dictionary attack against predictable messages by encrypting candidate plaintexts under the public key and comparing the result with the observed ciphertext. For this reason alone, textbook RSA is \textbf{not semantically secure}.
+
+\subsection{Small Message Attack}
+
+Another weakness appears when the plaintext is numerically small. Suppose
+\[
+M^e < N.
+\]
+Then the modular reduction does not actually change the value, and the ciphertext is simply
+\[
+C = M^e
+\]
+over the ordinary integers. In that case, an attacker can recover the message by taking the usual integer $e$th root:
+\[
+M = \sqrt[e]{C}.
+\]
+
+This attack is especially dangerous when the public exponent $e$ is small and the plaintext space contains short or structured messages. It shows that arithmetic correctness does not imply cryptographic secrecy.
+
+\subsection{Multiplicative Property Attack}
+
+Textbook RSA also preserves multiplication:
+\[
+E(M_1)\cdot E(M_2) \equiv M_1^e M_2^e \equiv (M_1M_2)^e \equiv E(M_1M_2) \pmod{N}.
+\]
+This \textbf{multiplicative property} means that ciphertexts can be modified in a meaningful way without knowing the underlying plaintexts. If an attacker holds a ciphertext $C = E(M)$ and chooses some value $t$, then
+\[
+C' = C \cdot E(t) \equiv E(Mt) \pmod{N}
+\]
+is a valid ciphertext for the related plaintext $Mt$.
+
+This violates the intuition that encrypted data should resist algebraic tampering. Even if the attacker does not fully recover the message, the ability to transform ciphertexts into predictable related ciphertexts is already a serious failure of security.
+
+\subsection{Lecture Attack Example}
+
+The lecture example illustrates how a short encrypted session key can be attacked much faster than brute force. Suppose a browser encrypts a 64-bit session key $K$ using textbook RSA:
+\[
+C = K^e \bmod N.
+\]
+Now suppose that
+\[
+K = K_1K_2
+\]
+with
+\[
+K_1, K_2 < 2^{34}.
+\]
+Then
+\[
+C \equiv K_1^e K_2^e \pmod{N}.
+\]
+An attacker can use a meet-in-the-middle strategy:
+
+\begin{enumerate}
+\item Precompute a table of values derived from one side, such as
+\[
+\frac{C}{K_1^e} \pmod{N}
+\]
+for all candidate values of $K_1$.
+\item Compute
+\[
+K_2^e \pmod{N}
+\]
+for all candidate values of $K_2$ and check for matches in the table.
+\end{enumerate}
+
+This reduces the work dramatically compared with exhaustive search over all $2^{64}$ possibilities. Instead of searching the full key space directly, the attacker exploits the multiplicative structure of RSA to divide the problem into two smaller searches.
+
+\begin{figure}[h]
+\centering
+\fbox{%
+\begin{minipage}{0.88\linewidth}
+\centering
+\textbf{Meet-in-the-middle idea for short RSA-encrypted keys}
+
+\vspace{0.4em}
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.2cm,minimum height=0.9cm] (c) at (0,0) {$C=K^e$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (k1) at (4.2,0.9) {guess $K_1$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (k2) at (4.2,-0.9) {guess $K_2$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=0.9cm] (tab) at (8.9,0.9) {table of $C/K_1^e$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=0.9cm] (chk) at (8.9,-0.9) {compute $K_2^e$ and match};
+    \draw[->,thick] (c.east) -- (k1.west);
+    \draw[->,thick] (c.east) -- (k2.west);
+    \draw[->,thick] (k1.east) -- (tab.west);
+    \draw[->,thick] (k2.east) -- (chk.west);
+\end{tikzpicture}
+\end{minipage}%
+}
+\caption{A structured plaintext space can make textbook RSA vulnerable to faster-than-brute-force search.}
+\end{figure}
+
+These attacks illustrate the central lesson of this section: \textbf{RSA as a trapdoor permutation is not automatically a secure public key encryption scheme}. Additional preprocessing is required to add randomness and remove exploitable algebraic structure.

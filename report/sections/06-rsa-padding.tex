@@ -1,0 +1,67 @@
+The weaknesses of textbook RSA arise because the raw function
+\[
+M \mapsto M^e \bmod N
+\]
+is deterministic and algebraically structured. To convert RSA into a practical encryption scheme, one must first transform the message using a randomized encoding process. This transformation is called \textbf{padding}.
+
+\subsection{Why Padding Is Needed}
+
+Padding serves two essential purposes. First, it introduces \textbf{randomness}, ensuring that the same message does not always encrypt to the same ciphertext. Second, it adds \textbf{structure}, so malformed or manipulated inputs can be recognized and rejected.
+
+Conceptually, padding changes the encryption process from
+\[
+C = M^e \bmod N
+\]
+to
+\[
+C = \operatorname{RSA}(\operatorname{Pad}(M;r)),
+\]
+where $r$ is fresh randomness. Because the RSA function is then applied to a randomized encoding of the message rather than to the message directly, simple equality tests, dictionary attacks, and several structural attacks become much harder.
+
+\subsection{PKCS\#1 v1.5}
+
+One historically important padding scheme is \textbf{PKCS\#1 v1.5}. Before RSA encryption, the plaintext is embedded into a structured block of the form
+\[
+02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+\]
+The leading bytes indicate that the block is intended for encryption, the random padding introduces nondeterminism, and the separator byte marks where the actual message begins.
+
+This design was widely deployed in practice and was a major improvement over textbook RSA. However, it was later shown to be vulnerable to adaptive chosen-ciphertext attacks when implementations leaked whether the decrypted block had valid PKCS\#1 formatting. Thus, PKCS\#1 v1.5 illustrates an important theme in cryptography: an encoding rule can look strong on paper but still fail when combined with an informative implementation.
+
+\subsection{OAEP}
+
+A more modern and principled design is \textbf{Optimal Asymmetric Encryption Padding (OAEP)}. OAEP preprocesses the message using randomness together with hash-based masking operations before the RSA exponentiation is applied. At a high level, it:
+
+\begin{itemize}
+\item adds fresh randomness to every encryption,
+\item mixes the message and the random seed through mask generation functions, and
+\item produces a structured RSA input that is difficult to manipulate meaningfully.
+\end{itemize}
+
+In schematic form, OAEP can be viewed as
+\[
+\text{message} + \text{random seed}
+\longrightarrow
+\text{masked block}
+\longrightarrow
+\text{RSA input}.
+\]
+This design aims to remove both the determinism and the simple algebraic transparency of textbook RSA.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.3cm,minimum height=0.9cm] (m) at (0,0) {message};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (r) at (3.6,0) {random seed};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (mask) at (8.0,0) {masking and hashing};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (rsa) at (12.4,0) {RSA input};
+    \draw[->,thick] (m.east) -- (r.west);
+    \draw[->,thick] (r.east) -- (mask.west);
+    \draw[->,thick] (mask.east) -- (rsa.west);
+\end{tikzpicture}
+\caption{OAEP preprocesses the plaintext with randomness before RSA is applied.}
+\end{figure}
+
+OAEP is important because it comes with stronger theoretical guarantees. In the random oracle model, it provides significantly better resistance to chosen-ciphertext attacks than textbook RSA and than older ad hoc encodings.
+
+The broader lesson is that \textbf{secure RSA encryption is not just ``RSA plus a message''}. It is RSA combined with a carefully designed randomized encoding procedure. Without that preprocessing step, the trapdoor permutation remains mathematically interesting but cryptographically unsafe.

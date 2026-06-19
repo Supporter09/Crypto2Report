@@ -1,0 +1,152 @@
+\textbf{ElGamal Cryptosystem} là một public-key encryption scheme được xây dựng từ phép lũy thừa trong một nhóm cyclic. Độ an toàn của nó gắn với độ khó của việc phân biệt các bộ Diffie--Hellman với các phần tử ngẫu nhiên. Trong cách trình bày của chương này, thông điệp được bảo vệ bằng cách kết hợp một mặt nạ sinh từ nhóm với bản rõ, nên bản mã sẽ thay đổi mỗi khi cùng một thông điệp được mã hóa.
+
+\subsection{Sinh khóa}
+
+Gọi $G$ là một nhóm cyclic cấp nguyên tố $q$ được sinh bởi phần tử $g$. Người nhận chọn một số mũ bí mật
+\[
+a \xleftarrow{\$} \{1,2,\dots,q-1\}
+\]
+và tính
+\[
+h = g^a.
+\]
+Khóa công khai là
+\[
+pk = (G,g,h),
+\]
+và khóa bí mật là
+\[
+sk = a.
+\]
+Giá trị $h$ được công khai, nhưng việc khôi phục $a$ từ $g$ và $g^a$ được tin là khó trong một nhóm thích hợp. Đây là cấu trúc một chiều cơ bản đứng sau ElGamal.
+
+\subsection{Mã hóa}
+
+Để mã hóa một thông điệp $m$, người gửi chọn một số mũ ngẫu nhiên mới
+\[
+r \xleftarrow{\$} \{1,2,\dots,q-1\}.
+\]
+Bản mã sau đó được tạo thành dưới dạng
+\[
+C = (u,v) = (g^r, h^r \cdot m).
+\]
+Thành phần thứ nhất $u=g^r$ biểu diễn giá trị ngẫu nhiên dưới dạng lũy thừa, còn thành phần thứ hai che thông điệp bằng cách nhân nó với giá trị chung $h^r = g^{ar}$. Đặc điểm quan trọng là $r$ được chọn mới cho mỗi lần mã hóa, nên ngay cả cùng một bản rõ cũng tạo ra những bản mã khác nhau.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[>=Latex]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.8cm,minimum height=0.9cm] (sender) at (0,0) {Người gửi};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (pub) at (6.7,0) {Khóa công khai $(G,g,h)$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.9cm,minimum height=0.9cm] (recv) at (13.0,0) {Người nhận};
+    \draw[->,thick] (sender.east) -- node[above]{chọn ngẫu nhiên $r$} (pub.west);
+    \draw[->,thick] (pub.east) -- node[above]{gửi $(g^r,h^r m)$} (recv.west);
+\end{tikzpicture}
+
+\vspace{0.4em}
+
+\fbox{%
+\begin{minipage}{0.86\linewidth}
+\centering
+\textbf{Trực giác ElGamal:} người gửi dùng ngẫu nhiên mới $r$ để tạo ra một hệ số che một lần từ khóa công khai của người nhận, vì vậy cùng một bản rõ sẽ không ánh xạ thành cùng một bản mã hai lần.
+\end{minipage}%
+}
+\caption{Luồng mã hóa ElGamal ở mức khái quát.}
+\end{figure}
+
+\subsection{Giải mã}
+
+Cho bản mã
+\[
+(u,v) = (g^r,h^r \cdot m),
+\]
+người nhận dùng khóa bí mật $a$ để tính
+\[
+u^a = (g^r)^a = g^{ra} = h^r.
+\]
+Thông điệp sau đó được khôi phục bằng cách loại bỏ mặt nạ:
+\[
+m = \frac{v}{u^a}.
+\]
+Vì
+\[
+\frac{h^r \cdot m}{(g^r)^a} = \frac{g^{ar}\cdot m}{g^{ar}} = m,
+\]
+nên quá trình giải mã là đúng.
+
+\subsection{Phân tích an toàn}
+
+Mệnh đề an toàn quan trọng ở đây là ElGamal đạt \textbf{semantic security} dưới \textbf{giả thuyết Decisional Diffie--Hellman}. Cấu trúc của bản mã là
+\[
+(g^r, h^r \cdot m) = (g^r, g^{ar}\cdot m).
+\]
+Nếu một đối thủ có thể phân biệt các phép mã hóa của hai thông điệp được chọn, thì đối thủ đó có thể quyết định xem một bộ dạng
+\[
+(g,g^a,g^r,T)
+\]
+có chứa
+\[
+T = g^{ar}
+\]
+hay chỉ chứa một phần tử ngẫu nhiên của nhóm. Điều này đưa đến ý tưởng phép quy dẫn:
+\[
+\text{Phá semantic security của ElGamal} \Longrightarrow \text{phân biệt được một bộ DDH}.
+\]
+
+Trực giác của lập luận này khá rõ ràng. Nếu $T=g^{ar}$ thì bản mã thử thách là một phép mã hóa ElGamal hợp lệ. Nếu $T$ là ngẫu nhiên, thì thành phần che hoạt động giống như một one-time pad trong bối cảnh nhóm, và đối thủ không thu được thông tin hữu ích nào về thông điệp. Do đó, bất kỳ thành công không bỏ qua được nào trong việc phân biệt thông điệp đều sẽ mâu thuẫn với giả thuyết DDH.
+
+\subsection{Ví dụ tính toán nhỏ}
+
+Để minh họa, xét một ví dụ nhỏ đủ đơn giản để kiểm tra bằng tay. Lấy nhóm nhân modulo $23$, và chọn phần tử sinh
+\[
+g = 5.
+\]
+Giả sử người nhận chọn
+\[
+a = 6.
+\]
+Khi đó
+\[
+h = g^a = 5^6 \equiv 8 \pmod{23},
+\]
+vì vậy khóa công khai là $(23,5,8)$ và khóa bí mật là $6$.
+
+Bây giờ, giả sử thông điệp là
+\[
+m = 10,
+\]
+và người gửi chọn ngẫu nhiên
+\[
+r = 7.
+\]
+Người gửi tính
+\[
+u = g^r = 5^7 \equiv 17 \pmod{23}
+\]
+và
+\[
+h^r = 8^7 \equiv 12 \pmod{23}.
+\]
+Do đó, thành phần bản mã thứ hai là
+\[
+v = h^r \cdot m \equiv 12 \cdot 10 \equiv 5 \pmod{23}.
+\]
+Vì vậy bản mã thu được là
+\[
+C = (17,5).
+\]
+
+Để giải mã, người nhận tính
+\[
+u^a = 17^6 \equiv 12 \pmod{23}.
+\]
+Nghịch đảo của $12$ modulo $23$ là $2$, vì
+\[
+12 \cdot 2 \equiv 1 \pmod{23}.
+\]
+Từ đó
+\[
+m = v \cdot (u^a)^{-1} \equiv 5 \cdot 2 \equiv 10 \pmod{23},
+\]
+và thông điệp gốc được khôi phục.
+
+Ví dụ này cố ý sử dụng tham số nhỏ và không an toàn trong thực tế, nhưng nó cho thấy rõ ba giai đoạn cốt lõi của ElGamal: \textbf{sinh khóa}, \textbf{mã hóa ngẫu nhiên}, và \textbf{loại bỏ mặt nạ thông qua phép lũy thừa với khóa bí mật}.

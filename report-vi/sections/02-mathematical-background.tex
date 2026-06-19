@@ -1,0 +1,124 @@
+Những hệ mã được trình bày trong báo cáo này dựa trên một tập hợp gọn các ý tưởng toán học thuộc lý thuyết số và độ khó tính toán. Phần này chỉ trình bày những kiến thức cần thiết để hiểu ElGamal và RSA. Mục tiêu là giới thiệu các khái niệm hỗ trợ trực tiếp cho lập luận bảo mật và chứng minh tính đúng đắn sẽ được sử dụng ở các phần sau.
+
+\subsection{Số học đồng dư}
+
+Số học đồng dư nghiên cứu các số nguyên theo một mô-đun cố định $n \geq 2$. Với hai số nguyên $a$ và $b$, ta viết
+\[
+a \equiv b \pmod{n}
+\]
+khi $n$ chia hết cho $a-b$. Nói cách khác, $a$ và $b$ cho cùng một số dư khi chia cho $n$. Tính toán theo mô-đun $n$ cho phép quy các giá trị lớn về một tập hữu hạn các lớp số dư
+\[
+\{0,1,2,\dots,n-1\}.
+\]
+Cấu trúc này là nền tảng trong mật mã học bởi vì các thuật toán mã hóa và giải mã thường liên quan đến phép nhân lặp lại và lũy thừa theo mô-đun một số nguyên lớn. Vì vậy, \textbf{số học đồng dư} là ngôn ngữ cơ bản để mô tả cả ElGamal lẫn RSA.
+
+Ví dụ, nếu $17 \equiv 5 \pmod{12}$, thì hai số này đại diện cho cùng một lớp số dư modulo $12$. Tương tự, các phép toán đại số được bảo toàn dưới quan hệ đồng dư. Nếu
+\[
+a \equiv b \pmod{n}
+\quad \text{và} \quad
+c \equiv d \pmod{n},
+\]
+thì
+\[
+a+c \equiv b+d \pmod{n}
+\]
+và
+\[
+ac \equiv bd \pmod{n}.
+\]
+Tính chất này làm cho số học đồng dư đặc biệt phù hợp với tính toán thuật toán trong các cấu trúc mật mã.
+
+\subsection{Hàm phi Euler}
+
+Hàm phi Euler, ký hiệu $\varphi(N)$, đếm số lượng số nguyên trong tập $\{1,2,\dots,N-1\}$ nguyên tố cùng nhau với $N$. Hàm này đóng vai trò trung tâm trong RSA. Trong trường hợp quan trọng khi
+\[
+N = pq
+\]
+với $p$ và $q$ là hai số nguyên tố phân biệt, giá trị của hàm phi là
+\[
+\varphi(N) = (p-1)(q-1).
+\]
+Lý do là trong các số từ $1$ đến $N-1$, những số không nguyên tố cùng nhau với $N$ chính là những số chia hết cho $p$ hoặc $q$.
+
+Công thức này là then chốt vì \textbf{quá trình sinh khóa RSA} phụ thuộc vào việc chọn số mũ công khai $e$ và số mũ bí mật $d$ sao cho
+\[
+ed \equiv 1 \pmod{\varphi(N)}.
+\]
+Sự tồn tại của nghịch đảo modulo này đòi hỏi
+\[
+\gcd(e,\varphi(N)) = 1.
+\]
+
+\subsection{Định lý Euler}
+
+Định lý Euler là kết quả cơ bản nối giữa phép lũy thừa modulo và hàm phi. Định lý phát biểu rằng nếu
+\[
+\gcd(x,N) = 1,
+\]
+thì
+\[
+x^{\varphi(N)} \equiv 1 \pmod{N}.
+\]
+Định lý này mở rộng định lý nhỏ Fermat và cung cấp \textbf{cơ sở toán học cốt lõi cho quá trình giải mã RSA}. Nếu các số mũ $e$ và $d$ thỏa mãn
+\[
+ed = k\varphi(N) + 1
+\]
+với một số nguyên $k$, thì
+\[
+x^{ed} = x^{k\varphi(N)+1} = \left(x^{\varphi(N)}\right)^k x \equiv x \pmod{N},
+\]
+giả sử $\gcd(x,N)=1$. Đây là ý tưởng trung tâm đằng sau tính đúng đắn của hoán vị cửa sập RSA.
+
+\subsection{Bài toán logarit rời rạc}
+
+Hệ mã ElGamal được xây dựng trên độ khó của \textbf{bài toán logarit rời rạc} trong một nhóm cyclic phù hợp. Gọi $G$ là một nhóm cyclic sinh bởi phần tử $g$. Cho phần tử
+\[
+h = g^a,
+\]
+bài toán logarit rời rạc yêu cầu tìm lại số mũ $a$. Mặc dù phép lũy thừa có thể tính hiệu quả, phép đảo ngược của nó được tin là khó về mặt tính toán trong các nhóm được lựa chọn cẩn thận và có cấp lớn.
+
+Sự bất đối xứng giữa phép tính thuận dễ và phép đảo ngược khó chính là khuôn mẫu tổng quát xuất hiện xuyên suốt trong mã hóa khóa công khai. Trong ElGamal, khóa công khai chứa một phần tử nhóm có dạng $g^a$, trong khi khóa bí mật chính là số mũ $a$. Mức độ an toàn phụ thuộc vào giả thuyết rằng đối thủ không thể khôi phục $a$ một cách hiệu quả chỉ từ thông tin công khai.
+
+\subsection{Giả thuyết Diffie--Hellman tính toán}
+
+\textbf{Giả thuyết Computational Diffie--Hellman (CDH)} mô tả hình thức độ khó của việc kết hợp các phần tử nhóm đã được nâng lên lũy thừa thành một bí mật chung. Cho
+\[
+g, \quad g^a, \quad g^b,
+\]
+yêu cầu là tính
+\[
+g^{ab}.
+\]
+Giả thuyết CDH phát biểu rằng không có thuật toán hiệu quả nào có thể thực hiện phép tính này với xác suất không bỏ qua được trong các nhóm được dùng bởi hệ mã.
+
+Bài toán này liên quan mật thiết đến bài toán logarit rời rạc, nhưng không hoàn toàn đồng nhất với nó. Ngay cả khi đối thủ không thể tìm ra riêng lẻ $a$ hoặc $b$, câu hỏi vẫn còn đó là liệu giá trị chung $g^{ab}$ có thể được tính trực tiếp hay không. Trong nhiều bối cảnh mật mã, CDH được xem là một giả thuyết độ khó tự nhiên cho thỏa thuận khóa và các cấu trúc liên quan.
+
+\subsection{Giả thuyết Diffie--Hellman quyết định}
+
+\textbf{Giả thuyết Decisional Diffie--Hellman (DDH)} mạnh hơn CDH và đặc biệt quan trọng đối với an toàn của mã hóa ElGamal. Cho bộ
+\[
+(g, g^a, g^b, T),
+\]
+thách thức là quyết định xem
+\[
+T = g^{ab}
+\]
+hay $T$ chỉ đơn giản là một phần tử ngẫu nhiên của nhóm, độc lập với $a$ và $b$. Dưới giả thuyết DDH, không có đối thủ hiệu quả nào có thể phân biệt hai trường hợp này với lợi thế đáng kể.
+
+Dạng phát biểu theo kiểu ``quyết định'' này quan trọng bởi vì tính bảo mật ngữ nghĩa yêu cầu các thành phần của bản mã phải có vẻ ngẫu nhiên đối với đối thủ. Trong ElGamal, giá trị $h^r = g^{ar}$ được ẩn trong bản mã. Nếu bộ gồm các giá trị công khai và thành phần ẩn này không thể phân biệt được với ngẫu nhiên bằng tính toán, thì thông điệp được mã hóa cũng được bảo vệ trước đối thủ hiệu quả.
+
+\subsection{Giả thuyết phân tích thừa số}
+
+RSA được xây dựng trên một giả thuyết độ khó khác. Thay vì dựa vào logarit rời rạc trong nhóm, nó dựa vào độ khó được giả định của việc phân tích một số hợp thành lớn
+\[
+N = pq,
+\]
+trong đó $p$ và $q$ là các số nguyên tố lớn. Giả thuyết phân tích thừa số phát biểu rằng, khi chỉ biết $N$, không có thuật toán hiệu quả nào có thể tìm lại các thừa số nguyên tố của nó nếu mô-đun được chọn đủ lớn và sinh ra đúng cách.
+
+\textbf{Giả thuyết phân tích thừa số} này quan trọng bởi vì biết được $p$ và $q$ sẽ lập tức cho phép suy ra
+\[
+\varphi(N) = (p-1)(q-1),
+\]
+và từ đó cho phép tính số mũ bí mật $d$ từ số mũ công khai $e$. Vì vậy, độ an toàn của RSA gắn liền với độ khó của việc khôi phục phép phân tích thừa số ẩn của $N$.
+
+Tổng hợp lại, các khái niệm toán học này tạo nên nền tảng cho hai hệ thống chính được nghiên cứu trong chương này. \textbf{ElGamal} dựa vào các giả thuyết độ khó liên quan đến lũy thừa trong nhóm cyclic, đặc biệt là DDH, trong khi \textbf{RSA} dựa vào số học modulo một số hợp thành và độ khó của việc phân tích mô-đun đó.
