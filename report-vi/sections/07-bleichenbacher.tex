@@ -37,10 +37,11 @@ Kẻ tấn công chọn một hệ số $s$ và tạo bản mã sửa đổi
 \[
 C' = C \cdot s^e \bmod N .
 \]
-Theo tính chất nhân của RSA, khi máy chủ giải mã $C'$ nó thu được
+Theo tính chất nhân của RSA, khi máy chủ giải mã $C'$ bằng số mũ bí mật $d$ nó thu được
 \[
-M' = M s \bmod N .
+M' = (C')^{d} \bmod N = (C \cdot s^{e})^{d} \bmod N = C^{d} s^{ed} \bmod N = M s \bmod N ,
 \]
+trong đó dùng $C^{d} \equiv M$ và $s^{ed} \equiv s \pmod{N}$.
 Oracle khi đó cho biết $M'$ có hợp lệ PKCS\#1 hay không. Cụ thể, một $M'$ hợp lệ bắt đầu bằng các byte \texttt{00 02}, nên
 \[
 2B \le M s - r N \le 3B - 1 \quad\text{với một số nguyên } r \text{ nào đó.}
@@ -49,15 +50,17 @@ Oracle khi đó cho biết $M'$ có hợp lệ PKCS\#1 hay không. Cụ thể, m
 
 \begin{figure}[h]
 \centering
-\begin{tikzpicture}[>=Latex]
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (att) at (0,1.4)  {Kẻ tấn công: chọn hệ số $s$};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (form) at (7.2,1.4) {tạo $C'=C\cdot s^{e}\bmod N$};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (srv) at (7.2,-1.4) {Máy chủ: giải mã, kiểm tra PKCS\#1};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (nar) at (0,-1.4)  {thu hẹp khoảng chứa $M$};
+\begin{tikzpicture}[>=Latex,
+    box/.style={draw,rounded corners,fill=gray!10,align=center,
+                text width=3.6cm,minimum height=1.1cm}]
+    \node[box] (att)  at (0,1.6)   {Kẻ tấn công:\\ chọn hệ số $s$};
+    \node[box] (form) at (8.4,1.6) {tạo $C'=C\cdot s^{e}\bmod N$};
+    \node[box] (srv)  at (8.4,-1.6){Máy chủ: giải mã,\\ kiểm tra PKCS\#1};
+    \node[box] (nar)  at (0,-1.6)  {thu hẹp khoảng chứa $M$};
 
     \draw[->,thick] (att.east) -- node[above]{$s$} (form.west);
     \draw[->,thick] (form.south) -- node[right]{gửi $C'$} (srv.north);
-    \draw[->,thick] (srv.west) -- node[below]{hợp lệ / không} (nar.east);
+    \draw[->,thick] (srv.west) -- node[midway,below]{hợp lệ / không} (nar.east);
     \draw[->,thick] (nar.north) -- node[left]{cập nhật $s$} (att.south);
 \end{tikzpicture}
 
