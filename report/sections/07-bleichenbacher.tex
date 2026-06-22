@@ -41,11 +41,11 @@ By the multiplicative property of RSA, when the server decrypts $C'$ it obtains
 \[
 M' = M s \bmod N .
 \]
-The oracle then reveals whether $M'$ is PKCS\#1 conforming, i.e.\ whether
+The oracle then reveals whether $M'$ is PKCS\#1 conforming. In particular, a conforming $M'$ begins with the bytes \texttt{00 02}, so
 \[
 2B \le M s - r N \le 3B - 1 \quad\text{for some integer } r .
 \]
-Each conforming value of $s$ yields a linear constraint of this form and therefore pins $M$ down to a union of subintervals of $[2B, 3B-1]$. By searching for successive multipliers $s$ in a structured way and intersecting the resulting constraints, the attacker repeatedly halves the set of candidate values until a single interval of width one remains; its endpoint is the original plaintext $M$. The attack is therefore not a direct algebraic inversion of RSA but an \textbf{adaptive interval-narrowing search} driven by oracle feedback, typically requiring on the order of tens of thousands to a few million queries depending on the variant.
+(Full conformance also requires nonzero padding and a \texttt{00} separator, so this interval is a slightly looser condition than the complete check; the interval arithmetic below uses the \texttt{00 02} prefix, as in Bleichenbacher's original analysis.) Each conforming value of $s$ yields a linear constraint of this form and therefore pins $M$ down to a union of subintervals of $[2B, 3B-1]$. By searching for successive multipliers $s$ in a structured way and intersecting the resulting constraints, the attacker repeatedly halves the set of candidate values until a single interval of width one remains; its endpoint is the original plaintext $M$. The attack is therefore not a direct algebraic inversion of RSA but an \textbf{adaptive interval-narrowing search} driven by oracle feedback, typically requiring on the order of tens of thousands to a few million queries depending on the variant.
 
 \begin{figure}[h]
 \centering

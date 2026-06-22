@@ -46,7 +46,7 @@ A more modern and principled design is \textbf{Optimal Asymmetric Encryption Pad
 \begin{itemize}
 \item adds a fresh random seed to every encryption,
 \item mixes the message and the seed through a two-round Feistel-like network built from $G$ and $H$, and
-\item produces a structured RSA input in which every output bit depends on the entire message and seed.
+\item produces an \emph{all-or-nothing} encoded block: the message can be recovered only from the complete block, never from a part of it.
 \end{itemize}
 
 Concretely, let $\mathrm{hLen}$ be the output length of the hash and $k$ the byte length of $N$. The message is first formatted into a data block
@@ -90,7 +90,7 @@ and $\mathrm{EM}$ is the integer fed into the RSA permutation. Decryption simply
     \draw[->,thick] (mdb.south) .. controls (0,-1.0) .. (em.north west);
     \draw[->,thick] (mseed.south) -- (em.north east);
 \end{tikzpicture}
-\caption{OAEP combines the data block DB and a random seed through two mask generation functions $G$ and $H$ before RSA is applied. Each output bit of $\mathrm{EM}$ depends on the whole message and the whole seed.}
+\caption{OAEP combines the data block DB and a random seed through two mask generation functions $G$ and $H$ before RSA is applied. Decryption must process the entire block: recovering $M$ requires all of maskedDB (to reconstruct the seed via $H$) and all of the seed (to reconstruct DB via $G$).}
 \end{figure}
 
 OAEP is important because it comes with stronger theoretical guarantees. The construction has the \emph{all-or-nothing} property: flipping a single bit of $\mathrm{EM}$ scrambles the recovered seed and data block unpredictably, so an attacker cannot transform a valid ciphertext into another valid one. In the random oracle model, RSA-OAEP is provably \textbf{IND-CCA2 secure} under the RSA assumption, which is precisely the resistance to adaptive chosen-ciphertext attacks that PKCS\#1 v1.5 lacked.
