@@ -1,70 +1,80 @@
-RSA được hiểu tự nhiên nhất như một \textbf{trapdoor permutation} trên nhóm nhân modulo một số hợp thành. Khóa công khai xác định một hàm dễ tính theo chiều thuận, còn khóa bí mật cung cấp thông tin ẩn cần thiết để đảo ngược hàm đó một cách hiệu quả.
+RSA được hiểu một cách tự nhiên nhất như một \textbf{hoán vị cửa sập} (trapdoor permutation) trên nhóm nhân modulo một hợp số. Khóa công khai định nghĩa một hàm dễ tính toán, trong khi khóa bí mật cung cấp thông tin bị giấu đi cần thiết để đảo ngược hàm đó một cách hiệu quả.
 
-\subsection{Sinh khóa}
+\subsection{Ngữ cảnh Hoán vị Cửa sập}
 
-RSA bắt đầu bằng việc chọn hai số nguyên tố lớn phân biệt
+Một \textbf{hoán vị cửa sập} bao gồm ba thuật toán $(G, F, F^{-1})$ trong đó $G$ xuất ra khóa công khai $pk$ và khóa bí mật $sk$, $F(pk, \cdot)$ tính toán giá trị hàm, và $F^{-1}(sk, y)$ đảo ngược hàm bằng $sk$. RSA hoàn toàn phù hợp với khuôn mẫu này. Ánh xạ
+\[
+M \mapsto M^e \bmod N
+\]
+là công khai và có thể tính toán hiệu quả. Tuy nhiên, việc đảo ngược nó tương đương với việc trích xuất căn bậc $e$ modulo $N$, một bài toán được tin là khó về mặt tính toán nếu không có thông tin cửa sập.
+
+Cửa sập ở đây chính là số mũ bí mật $d$, hay tương đương với cách phân tích ra thừa số nguyên tố của $N$. Khi biết được cách phân tích này, ta có thể tính được $\varphi(N)$ và từ đó xác định được $d$. Nếu không có cấu trúc ẩn đó, việc đảo ngược được giả định là bất khả thi với các tham số đủ lớn.
+
+\subsection{\texorpdfstring{Tạo khóa (Thuật toán $G$)}{Tạo khóa (Thuật toán G)}}
+
+RSA bắt đầu bằng việc chọn hai số nguyên tố lớn, phân biệt (thông thường mỗi số dài 512 bit theo các tham số lý thuyết tiêu chuẩn)
 \[
 p \quad \text{và} \quad q,
 \]
-và hình thành mô-đun
+và tạo ra số modulo (ví dụ, 1024 bit)
 \[
 N = pq.
+\]
+Ta định nghĩa nhóm nhân các số nguyên modulo $N$ là
+\[
+\mathbb{Z}_N^{\ast} = \{x \in \mathbb{Z}_N \mid \gcd(x, N) = 1\}.
 \]
 Hàm phi Euler của $N$ là
 \[
 \varphi(N) = (p-1)(q-1).
 \]
-Tiếp theo, ta chọn số mũ công khai $e$ sao cho
+Tiếp theo, ta chọn một số mũ công khai $e$ thỏa mãn
 \[
 \gcd(e,\varphi(N)) = 1.
 \]
-Vì $e$ nguyên tố cùng nhau với $\varphi(N)$, nó có nghịch đảo nhân modulo $\varphi(N)$. Số mũ bí mật $d$ được xác định bởi
+Vì $e$ nguyên tố cùng nhau với $\varphi(N)$, nó có nghịch đảo nhân theo modulo $\varphi(N)$. Do đó, số mũ bí mật $d$ được định nghĩa bởi
 \[
 ed \equiv 1 \pmod{\varphi(N)}.
 \]
-Tương đương, tồn tại một số nguyên $k$ sao cho
+Tương đương với việc tồn tại một số nguyên $k$ sao cho
 \[
 ed = k\varphi(N) + 1.
 \]
 
-Khóa công khai là
+Thuật toán xuất ra khóa công khai
 \[
 pk = (N,e),
 \]
-và khóa bí mật là
+và khóa bí mật
 \[
-sk = d.
+sk = (N,d).
 \]
-Phép phân tích thừa số của $N$ không được công bố. Chính phép phân tích ẩn này cho phép tính được số mũ bí mật ngay từ đầu.
+Dạng phân tích thừa số của $N$ không được công bố. Chính cấu trúc ẩn này là yếu tố cho phép tính toán số mũ bí mật ngay từ ban đầu.
 
-\subsection{Mã hóa}
+\subsection{\texorpdfstring{Mã hóa (Thuật toán $F$)}{Mã hóa (Thuật toán F)}}
 
-Với một thông điệp $M$ thuộc nhóm nhân $\mathbb{Z}_N^{\ast}$, phép mã hóa RSA được định nghĩa bởi
+Đối với một thông điệp $M$ thuộc nhóm nhân $\mathbb{Z}_N^{\ast}$, thuật toán mã hóa sẽ tính toán
 \[
 C = M^e \bmod N.
 \]
-Phép tính này hiệu quả ngay cả khi $N$ rất lớn, vì lũy thừa modulo có thể được thực hiện bằng kỹ thuật bình phương lặp.
+Phép toán này diễn ra hiệu quả ngay cả khi $N$ rất lớn nhờ vào thuật toán tính lũy thừa bằng phương pháp bình phương liên tiếp (repeated squaring).
 
-\subsection{Giải mã}
+\subsection{\texorpdfstring{Giải mã (Thuật toán $F^{-1}$)}{Giải mã (Thuật toán F⁻¹)}}
 
-Giải mã sử dụng số mũ bí mật $d$:
+Thuật toán giải mã sử dụng số mũ bí mật $d$ để đảo ngược hàm
 \[
 M = C^d \bmod N.
 \]
-Vì $C = M^e$, quá trình giải mã thực chất tính
+Vì $C \equiv M^e \pmod N$, phép giải mã sẽ thực hiện tính toán
 \[
-C^d = (M^e)^d = M^{ed}.
-\]
-Do đó, tính đúng đắn của RSA tương đương với việc chứng minh rằng
-\[
-M^{ed} \equiv M \pmod{N}.
+C^d \equiv (M^e)^d \equiv M^{ed} \pmod{N}.
 \]
 
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}[>=Latex]
     \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (m) at (0,0) {$M$};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (enc) at (4.5,0) {lũy thừa $e$ mod $N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (enc) at (4.4,0) {lũy thừa $e$ mod $N$};
     \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (c) at (8.8,0) {$C$};
     \draw[->,thick] (m.east) -- (enc.west);
     \draw[->,thick] (enc.east) -- (c.west);
@@ -74,27 +84,21 @@ M^{ed} \equiv M \pmod{N}.
 
 \begin{tikzpicture}[>=Latex]
     \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (c2) at (0,0) {$C$};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (dec) at (4.6,0) {lũy thừa $d$ mod $N$};
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (m2) at (9.1,0) {$M$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (dec) at (4.4,0) {lũy thừa $d$ mod $N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.5cm,minimum height=0.9cm] (m2) at (8.8,0) {$M$};
     \draw[->,thick] (c2.east) -- (dec.west);
     \draw[->,thick] (dec.east) -- (m2.west);
 \end{tikzpicture}
-\caption{RSA áp dụng số mũ công khai theo chiều thuận và số mũ bí mật theo chiều đảo ngược.}
+\caption{RSA áp dụng số mũ công khai theo chiều thuận và số mũ bí mật theo chiều nghịch.}
 \end{figure}
-
-\subsection{Giải thích trapdoor permutation}
-
-\textbf{Trapdoor permutation} là một song ánh dễ tính theo chiều thuận nhưng khó đảo ngược nếu không có thông tin đặc biệt. RSA phù hợp với mô hình này. Ánh xạ
-\[
-M \mapsto M^e \bmod N
-\]
-là công khai và có thể tính hiệu quả. Tuy nhiên, việc đảo ngược nó tương đương với việc trích xuất căn bậc $e$ modulo $N$, điều được tin là khó về mặt tính toán nếu không có thông tin cửa sập.
-
-Cửa sập ở đây là số mũ bí mật $d$, hay tương đương là phép phân tích thừa số của $N$. Một khi phép phân tích đó được biết, ta có thể tính $\varphi(N)$ và từ đó suy ra $d$. Nếu thiếu cấu trúc ẩn này, việc đảo ngược được giả định là bất khả thi trong thời gian hiệu quả với các tham số đủ lớn.
 
 \subsection{Chứng minh tính đúng đắn}
 
-Chứng minh tính đúng đắn của RSA suy ra trực tiếp từ định lý Euler. Vì
+Tính đúng đắn của RSA tương đương với việc chứng minh
+\[
+M^{ed} \equiv M \pmod{N}.
+\]
+Chứng minh này được suy ra trực tiếp từ định lý Euler. Vì
 \[
 ed = k\varphi(N)+1,
 \]
@@ -102,11 +106,11 @@ ta có
 \[
 M^{ed} = M^{k\varphi(N)+1} = \left(M^{\varphi(N)}\right)^k \cdot M.
 \]
-Nếu $M \in \mathbb{Z}_N^{\ast}$, thì $\gcd(M,N)=1$, nên theo định lý Euler,
+Nếu $M \in \mathbb{Z}_N^{\ast}$, thì $\gcd(M,N)=1$, theo định lý Euler ta có
 \[
 M^{\varphi(N)} \equiv 1 \pmod{N}.
 \]
-Thay vào biểu thức trên, ta được
+Thay vào biểu thức trước đó ta được
 \[
 M^{ed} \equiv 1^k \cdot M \equiv M \pmod{N}.
 \]
@@ -114,6 +118,28 @@ Do đó,
 \[
 C^d \equiv (M^e)^d \equiv M \pmod{N},
 \]
-và việc giải mã thực sự thu lại đúng thông điệp gốc.
+điều này chứng minh rằng việc giải mã khôi phục chính xác thông điệp gốc.
 
-Chứng minh này quan trọng vì nó cho thấy RSA không đơn thuần là một mẹo thuật toán. Tính đúng đắn của nó bắt nguồn từ cấu trúc của lý thuyết số, cụ thể là mối quan hệ giữa $e$ và $d$ theo modulo $\varphi(N)$.
+\textit{Lưu ý: Ngay cả khi $\gcd(M, N) \neq 1$, khiến $M \notin \mathbb{Z}_N^{\ast}$, phép giải mã RSA vẫn đúng với mọi $M \in \mathbb{Z}_N$ nhờ vào Định lý Thặng dư Trung Hoa (Chinese Remainder Theorem - CRT), đảm bảo tính đúng đắn toàn cục cho cấu trúc này.}
+
+\subsection{Ví dụ số học}
+
+Để minh họa cho cấu trúc này, hãy xem xét các tham số nguyên tố nhỏ:
+
+\textbf{Tạo khóa:} Chọn các số nguyên tố $p = 11$ và $q = 13$. Số modulus là $N = 11 \times 13 = 143$. Hàm phi Euler là $\varphi(N) = 10 \times 12 = 120$. Chọn số mũ công khai $e = 7$, vì $\gcd(7, 120) = 1$. Tính số mũ bí mật $d$ sao cho $7d \equiv 1 \pmod{120}$. Ở đây, $d = 103$ (vì $7 \times 103 = 721 = 6 \times 120 + 1$). Các khóa thu được là $pk = (143, 7)$ và $sk = (143, 103)$.
+
+\textbf{Mã hóa:} Giả sử thông điệp $M = 9$. Bản mã sẽ là $C = M^e \bmod N = 9^7 \bmod 143 = 48$.
+
+\textbf{Giải mã:} Sử dụng khóa bí mật đối với bản mã $C = 48$. Thông điệp được khôi phục là $M = C^d \bmod N = 48^{103} \bmod 143 = 9$. Tính đúng đắn đã được xác minh.
+
+\subsection{Giả định RSA và Khoảng cách đến An toàn ngữ nghĩa}
+
+Chứng minh tính đúng đắn cho thấy RSA hoạt động hoàn hảo dưới dạng một hoán vị cửa sập. An toàn lý thuyết của cấu trúc này dựa trên \textbf{giả định $(n, e, t, \epsilon)$-RSA}, trong đó phát biểu rằng đối với mọi thuật toán $\mathcal{A}$ chạy trong thời gian $t$:
+\[
+\Pr \left[ \mathcal{A}(N, e, x) = x^{1/e} \bmod N : p, q \xleftarrow{R} \text{primes } n\text{-bit}, N \leftarrow pq, x \xleftarrow{R} \mathbb{Z}_N^{\ast} \right] < \epsilon
+\]
+Giả định này khẳng định rằng việc tính toán căn bậc $e$ modulo $N$ mà không có khóa bí mật $d$ là bất khả thi về mặt tính toán đối với một phần tử $x \in \mathbb{Z}_N^{\ast}$ được chọn ngẫu nhiên theo phân phối đều.
+
+Tuy nhiên, tính đúng đắn về mặt toán học và độ khó của việc đảo ngược không đồng nghĩa ngay lập tức với sự bí mật trong mật mã học. Việc áp dụng trực tiếp hoán vị cửa sập này để mã hóa thông điệp---thường được gọi là "Textbook RSA" (RSA cơ bản)---sử dụng thẳng ánh xạ $M \mapsto M^e \bmod N$.
+
+Mặc dù giả định RSA đúng với các số nguyên ngẫu nhiên, các thông điệp trong thế giới thực lại có các cấu trúc có thể dự đoán được. Bởi vì hàm Textbook RSA thiếu đi quá trình đệm ngẫu nhiên (randomized padding), nó bảo toàn các tính chất đại số cơ bản như tính tất định (determinism) và tính đồng cấu nhân (multiplicative homomorphism). Như sẽ được trình bày chi tiết ở Phần 5, chính những đặc trưng cấu trúc này lại tạo ra các lỗ hổng nghiêm trọng, chứng minh rằng một hoán vị cửa sập dạng thô cần phải có thêm các bước tiền xử lý để đạt được an toàn ngữ nghĩa thực sự (semantic security).

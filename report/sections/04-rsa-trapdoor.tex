@@ -1,14 +1,28 @@
 RSA is most naturally understood as a \textbf{trapdoor permutation} on the multiplicative group modulo a composite integer. The public key defines a function that is easy to evaluate, while the private key provides the hidden information required to invert it efficiently.
 
-\subsection{Key Generation}
+\subsection{Trapdoor Permutation Context}
 
-RSA begins by selecting two large distinct primes
+A \textbf{trapdoor permutation} consists of three algorithms $(G, F, F^{-1})$ where $G$ outputs a public key $pk$ and a secret key $sk$, $F(pk, \cdot)$ evaluates the function, and $F^{-1}(sk, y)$ inverts the function using $sk$. RSA fits this exact pattern. The map
+\[
+M \mapsto M^e \bmod N
+\]
+is public and efficiently computable. However, inverting it amounts to extracting an $e$th root modulo $N$, which is believed to be computationally hard without the trapdoor information.
+
+The trapdoor is the secret exponent $d$, or equivalently the factorization of $N$. Once the factorization is known, one can compute $\varphi(N)$ and thereby determine $d$. Without that hidden structure, inversion is presumed to be infeasible for sufficiently large parameters.
+
+\subsection{Key Generation (Algorithm $G$)}
+
+RSA begins by selecting two large distinct primes (typically 512 bits each in standard theoretical parameters)
 \[
 p \quad \text{and} \quad q,
 \]
-and forming the modulus
+and forming the modulus (e.g., 1024 bits)
 \[
 N = pq.
+\]
+We define the multiplicative group of integers modulo $N$ as
+\[
+\mathbb{Z}_N^{\ast} = \{x \in \mathbb{Z}_N \mid \gcd(x, N) = 1\}.
 \]
 The Euler totient of $N$ is
 \[
@@ -27,37 +41,33 @@ Equivalently, there exists an integer $k$ such that
 ed = k\varphi(N) + 1.
 \]
 
-The public key is
+The algorithm outputs the public key
 \[
 pk = (N,e),
 \]
-and the private key is
+and the secret key
 \[
-sk = d.
+sk = (N,d).
 \]
 The factorization of $N$ is not published. This hidden factorization is what allows the private exponent to be computed in the first place.
 
-\subsection{Encryption}
+\subsection{Encryption (Algorithm $F$)}
 
-For a message $M$ in the multiplicative group $\mathbb{Z}_N^{\ast}$, RSA encryption is defined by
+For a message $M$ in the multiplicative group $\mathbb{Z}_N^{\ast}$, the encryption algorithm evaluates
 \[
 C = M^e \bmod N.
 \]
 This is efficient even when $N$ is very large because modular exponentiation can be performed using repeated squaring.
 
-\subsection{Decryption}
+\subsection{Decryption (Algorithm $F^{-1}$)}
 
-Decryption uses the private exponent $d$:
+The decryption algorithm uses the private exponent $d$ to invert the function
 \[
 M = C^d \bmod N.
 \]
-Since $C = M^e$, decryption computes
+Since $C = M^e \bmod N$, decryption computes
 \[
-C^d = (M^e)^d = M^{ed}.
-\]
-The correctness of RSA is therefore equivalent to showing that
-\[
-M^{ed} \equiv M \pmod{N}.
+C^d \equiv (M^e)^d \equiv M^{ed} \pmod{N}.
 \]
 
 \begin{figure}[h]
@@ -82,19 +92,13 @@ M^{ed} \equiv M \pmod{N}.
 \caption{RSA applies the public exponent in the forward direction and the private exponent in the inverse direction.}
 \end{figure}
 
-\subsection{Trapdoor Permutation Explanation}
-
-A \textbf{trapdoor permutation} is a bijection that is easy to compute but hard to invert without special information. RSA fits this pattern. The map
-\[
-M \mapsto M^e \bmod N
-\]
-is public and efficiently computable. However, inverting it amounts to extracting an $e$th root modulo $N$, which is believed to be computationally hard without the trapdoor information.
-
-The trapdoor is the secret exponent $d$, or equivalently the factorization of $N$. Once the factorization is known, one can compute $\varphi(N)$ and thereby determine $d$. Without that hidden structure, inversion is presumed to be infeasible for sufficiently large parameters.
-
 \subsection{Correctness Proof}
 
-The correctness proof follows directly from Euler's theorem. Since
+The correctness of RSA is therefore equivalent to showing that
+\[
+M^{ed} \equiv M \pmod{N}.
+\]
+This proof follows directly from Euler's theorem. Since
 \[
 ed = k\varphi(N)+1,
 \]
@@ -114,6 +118,28 @@ Therefore,
 \[
 C^d \equiv (M^e)^d \equiv M \pmod{N},
 \]
-which proves that decryption correctly recovers the original message.
+which proves that decryption correctly recovers the original message. 
 
-This proof is important because it shows that RSA is not merely an algorithmic trick. Its correctness is rooted in number-theoretic structure, specifically the relationship between the exponents $e$ and $d$ modulo $\varphi(N)$.
+Note: Even if $\gcd(M, N) \neq 1$, making $M \notin \mathbb{Z}_N^{\ast}$, RSA decryption still holds true for all $M \in \mathbb{Z}_N$ due to the Chinese Remainder Theorem (CRT), making the construction globally correct.
+
+\subsection{Numerical Example}
+
+To illustrate the construction, consider small prime parameters:
+
+\textbf{Key Generation:} Choose primes $p = 11$ and $q = 13$. The modulus is $N = 11 \times 13 = 143$. The totient is $\varphi(N) = 10 \times 12 = 120$. Choose public exponent $e = 7$, since $\gcd(7, 120) = 1$. Compute private exponent $d$ such that $7d \equiv 1 \pmod{120}$. Here, $d = 103$ (as $7 \times 103 = 721 = 6 \times 120 + 1$). The keys are $pk = (143, 7)$ and $sk = (143, 103)$.
+
+\textbf{Encryption:} Let message $M = 9$. The ciphertext is $C = M^e \bmod N = 9^7 \bmod 143 = 48$.
+
+\textbf{Decryption:} Using the secret key on ciphertext $C = 48$. The recovered message is $M = C^d \bmod N = 48^{103} \bmod 143 = 9$. Correctness is verified.
+
+\subsection{The RSA Assumption and the Gap to Semantic Security}
+
+The correctness proof demonstrates that RSA functions flawlessly as a trapdoor permutation. The theoretical security of this construct relies on the $(n, e, t, \epsilon)$-RSA assumption, which states that for all $t$-time algorithms $\mathcal{A}$:
+\[
+\Pr \left[ \mathcal{A}(N, e, x) = x^{1/e} \bmod N : p, q \xleftarrow{R} \text{n-bit primes}, N \leftarrow pq, x \xleftarrow{R} \mathbb{Z}_N^{\ast} \right] < \epsilon
+\]
+This assumption asserts that computing the $e$-th root modulo $N$ without the private key $d$ is computationally infeasible for a uniformly random element $x \in \mathbb{Z}_N^{\ast}$.
+
+However, mathematical correctness and hardness of inversion do not immediately equate to cryptographic secrecy. The raw application of this trapdoor permutation to encrypt messages---commonly referred to as "Textbook RSA"---applies the function $M \mapsto M^e \bmod N$ directly. 
+
+While the RSA assumption holds true for random integers, real-world messages possess predictable structures. Because the textbook RSA function lacks randomized padding, it fundamentally preserves algebraic properties such as determinism and multiplicative homomorphism. As will be detailed in Section 5, these exact structural characteristics introduce critical vulnerabilities, proving that a raw trapdoor permutation requires additional preprocessing to achieve true semantic security.
