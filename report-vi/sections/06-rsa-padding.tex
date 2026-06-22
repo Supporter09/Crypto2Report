@@ -22,10 +22,16 @@ Một cách phát biểu mục tiêu thiết kế là padding phải biến RSA 
 
 \subsection{PKCS\#1 v1.5}
 
-Một sơ đồ đệm có ý nghĩa lịch sử quan trọng là \textbf{PKCS\#1 v1.5}. Gọi $k$ là độ dài tính bằng byte của mô-đun $N$. Trước khi mã hóa RSA, một thông điệp $M$ gồm $\mathrm{mLen}$ byte được nhúng vào một khối $k$ byte có dạng
+Một sơ đồ đệm có ý nghĩa lịch sử quan trọng là \textbf{PKCS\#1 v1.5}. Ở đây $k$ là \emph{độ dài tính bằng byte của mô-đun} $N$, tức số byte cần để biểu diễn $N$,
 \[
-\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{\mathtt{02}}_{1}\,\|\,\underbrace{\text{PS}}_{\ge 8}\,\|\,\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{M}_{\mathrm{mLen}} .
+k = \left\lceil \frac{\log_2 N}{8} \right\rceil ,
 \]
+sao cho mọi chuỗi $k$ byte đều có thể đọc thành một số nguyên trong khoảng $[0, N)$ và đưa trực tiếp vào phép toán RSA. Trước khi mã hóa RSA, một thông điệp $M$ gồm $\mathrm{mLen}$ byte được nhúng vào một khối mã hóa $\mathrm{EM}$ dài đúng $k$ byte,
+\[
+\mathrm{EM} = \underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{\mathtt{02}}_{1}\,\|\,\underbrace{\text{PS}}_{\ge 8}\,\|\,\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{M}_{\mathrm{mLen}} ,
+\qquad |\mathrm{EM}| = k ,
+\]
+trong đó $\|$ ký hiệu phép nối byte và mỗi dấu ngoặc nhọn cho biết độ dài của trường đó tính bằng byte.
 Các thành phần có vai trò cụ thể:
 
 \begin{itemize}
