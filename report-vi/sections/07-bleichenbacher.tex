@@ -1,77 +1,87 @@
-Một trong những tấn công thực tế có ảnh hưởng sâu rộng nhất đối với mã hóa RSA là \textbf{tấn công Bleichenbacher} năm 1998. Nó nhắm vào các cài đặt RSA sử dụng đệm PKCS\#1 v1.5 và cho thấy rằng ngay cả những nguyên thủy toán học mạnh cũng có thể thất bại khi cài đặt làm lộ một lượng nhỏ thông tin về bản rõ sau giải mã.
+Một trong những tấn công thực tế có ảnh hưởng sâu rộng nhất đối với mã hóa RSA là \textbf{tấn công Bleichenbacher}, do Daniel Bleichenbacher công bố năm 1998. Nó nhắm vào các cài đặt RSA dùng đệm PKCS\#1 v1.5 --- bao gồm cả trao đổi khóa RSA trong SSL/TLS --- và cho thấy rằng ngay cả một nguyên thủy mạnh về toán học cũng có thể thất bại khi cài đặt làm lộ chỉ một bit thông tin về dữ liệu sau giải mã.
 
 \subsection{Bối cảnh}
 
-PKCS\#1 v1.5 từng được sử dụng rộng rãi trong các giao thức mạng và phần mềm thời kỳ đầu. Một khối hợp lệ sau khi giải mã phải bắt đầu bằng một định dạng xác định, thường là
-\[
-02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
-\]
-Máy chủ thường kiểm tra xem khối sau giải mã có thỏa mãn định dạng này hay không trước khi tiếp tục giao thức. Nếu phần đệm không hợp lệ, cài đặt có thể dừng lại với lỗi hoặc phản hồi khác với trường hợp hợp lệ.
+PKCS\#1 v1.5 từng được dùng rộng rãi trong các giao thức mạng và phần mềm thời kỳ đầu. Như đã mô tả ở Mục~6, một khối hợp lệ dành cho mã hóa phải bắt đầu bằng các byte \texttt{00 02}, theo sau là ít nhất tám byte đệm khác 0, một byte phân cách \texttt{00} và thông điệp. Máy chủ thường kiểm tra xem khối sau giải mã có thỏa định dạng này không trước khi tiếp tục giao thức. Nếu phần đệm không hợp lệ, cài đặt thường dừng với lỗi hoặc có hành vi quan sát được khác với trường hợp hợp lệ.
 
-Chính sự khác biệt trong hành vi này mở đường cho tấn công Bleichenbacher. Kẻ tấn công không cần khóa bí mật, cũng không cần phá trực tiếp RSA. Thay vào đó, họ khai thác phản ứng của máy chủ đối với những bản mã đã được sửa đổi một cách có chủ đích.
+Chính sự khác biệt hành vi này mở đường cho tấn công Bleichenbacher. Kẻ tấn công không cần khóa bí mật, cũng không cần phá trực tiếp RSA. Thay vào đó, họ khai thác phản ứng của máy chủ trước những bản mã được sửa đổi có chủ đích.
 
-\subsection{Ý tưởng oracle}
+\subsection{Padding oracle}
 
-Tấn công này dựa trên một \textbf{padding oracle}. Padding oracle là bất kỳ cơ chế nào cho phép kẻ tấn công biết liệu bản rõ sau giải mã có thỏa mãn định dạng PKCS yêu cầu hay không. Ví dụ:
+Tấn công dựa trên một \textbf{padding oracle}: bất kỳ cơ chế nào cho kẻ tấn công biết liệu bản rõ sau giải mã có thỏa định dạng PKCS\#1 yêu cầu hay không. Ví dụ:
 
 \begin{itemize}
-\item đệm hợp lệ $\rightarrow$ máy chủ tiếp tục xử lý,
+\item đệm hợp lệ $\rightarrow$ máy chủ tiếp tục xử lý (hoặc phản hồi chậm hơn, hoặc trả về một lỗi khác),
 \item đệm không hợp lệ $\rightarrow$ máy chủ báo lỗi hoặc phản hồi khác đi.
 \end{itemize}
 
-Ngay cả một bit thông tin như vậy cũng đã đủ nguy hiểm. Mỗi phản hồi của oracle tiết lộ liệu bản rõ chưa biết có nằm trong hay ngoài tập các giá trị tương thích với định dạng PKCS hay không.
+Ngay cả một bit thông tin như vậy cũng đủ nguy hiểm. Vì một khối hợp lệ bắt đầu bằng \texttt{00 02}, câu trả lời ``đệm hợp lệ'' cho kẻ tấn công biết số nguyên sau giải mã nằm trong một khoảng hẹp và đoán trước được, và mỗi truy vấn lại tinh chỉnh hiểu biết của kẻ tấn công về bản rõ ẩn.
 
 \subsection{Diễn tiến tấn công}
 
+Gọi $k$ là độ dài byte của $N$ và đặt
+\[
+B = 2^{8(k-2)}.
+\]
+Một bản rõ $m$ có khối mã hóa bắt đầu bằng các byte \texttt{00 02} thỏa, khi xét như số nguyên,
+\[
+2B \le m \le 3B - 1 .
+\]
+Đây chính là khoảng mà một câu trả lời oracle dương tiết lộ.
+
 Giả sử kẻ tấn công chặn được bản mã mục tiêu
 \[
-C = M^e \bmod N.
+C = M^e \bmod N .
 \]
-Kẻ tấn công sau đó chọn một hệ số $s$ và tạo bản mã sửa đổi
+Kẻ tấn công chọn một hệ số $s$ và tạo bản mã sửa đổi
 \[
-C' = C \cdot s^e \bmod N.
+C' = C \cdot s^e \bmod N .
 \]
-Khi máy chủ giải mã $C'$, nó thu được
+Theo tính chất nhân của RSA, khi máy chủ giải mã $C'$ nó thu được
 \[
-M' = Ms \bmod N.
+M' = M s \bmod N .
 \]
-Phản hồi của oracle cho biết liệu $M'$ có định dạng PKCS\#1 v1.5 hợp lệ hay không.
-
-Quy trình này được lặp đi lặp lại nhiều lần với các giá trị $s$ được lựa chọn có chiến lược. Mỗi truy vấn thành công hay thất bại đều thu hẹp khoảng giá trị mà bản rõ gốc $M$ có thể thuộc về. Theo thời gian, kẻ tấn công giao các khoảng này với nhau cho đến khi chỉ còn lại một bản rõ hợp lý duy nhất. Vì vậy, đây không phải là một phép đảo trực tiếp RSA bằng đại số; nó là một quá trình thu hẹp thích nghi dựa trên phản hồi của oracle.
+Oracle khi đó cho biết $M'$ có hợp lệ PKCS\#1 hay không, tức là liệu
+\[
+2B \le M s - r N \le 3B - 1 \quad\text{với một số nguyên } r \text{ nào đó.}
+\]
+Mỗi giá trị $s$ hợp lệ cho một ràng buộc tuyến tính dạng này, và do đó dồn $M$ về một hợp của các khoảng con của $[2B, 3B-1]$. Bằng cách tìm các hệ số $s$ kế tiếp một cách có hệ thống và giao các ràng buộc thu được, kẻ tấn công liên tục thu nhỏ tập giá trị khả dĩ cho đến khi chỉ còn một khoảng rộng bằng một; điểm mút của nó chính là bản rõ gốc $M$. Vì vậy đây không phải là phép đảo RSA trực tiếp bằng đại số mà là một \textbf{quá trình tìm kiếm thu hẹp khoảng thích nghi} dựa trên phản hồi oracle, thường cần cỡ hàng chục nghìn đến vài triệu truy vấn tùy biến thể.
 
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}[>=Latex]
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.7cm,minimum height=0.9cm] (att) at (0,0) {Kẻ tấn công};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (mod) at (4.4,0) {sửa $C$ thành $C'$};
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (srv) at (8.6,0) {Máy chủ};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.0cm,minimum height=0.9cm] (resp) at (12.9,0) {hợp lệ hay không?};
-    \draw[->,thick] (att.east) -- (mod.west);
-    \draw[->,thick] (mod.east) -- node[above]{$C'$} (srv.west);
-    \draw[->,thick] (srv.east) -- (resp.west);
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (att) at (0,1.4)  {Kẻ tấn công: chọn hệ số $s$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (form) at (7.2,1.4) {tạo $C'=C\cdot s^{e}\bmod N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (srv) at (7.2,-1.4) {Máy chủ: giải mã, kiểm tra PKCS\#1};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (nar) at (0,-1.4)  {thu hẹp khoảng chứa $M$};
+
+    \draw[->,thick] (att.east) -- node[above]{$s$} (form.west);
+    \draw[->,thick] (form.south) -- node[right]{gửi $C'$} (srv.north);
+    \draw[->,thick] (srv.west) -- node[below]{hợp lệ / không} (nar.east);
+    \draw[->,thick] (nar.north) -- node[left]{cập nhật $s$} (att.south);
 \end{tikzpicture}
 
-\vspace{0.5em}
+\vspace{0.6em}
 
 \fbox{%
-\begin{minipage}{0.82\linewidth}
+\begin{minipage}{0.88\linewidth}
 \centering
-\textbf{Ý tưởng cốt lõi:} mỗi phản hồi của oracle tiết lộ liệu bản rõ ẩn có nằm trong một khoảng PKCS\#1 hợp lệ hay không, từ đó cho phép kẻ tấn công thu hẹp dần tập các thông điệp khả dĩ cho đến khi khôi phục được bản rõ gốc.
+\textbf{Ý tưởng cốt lõi:} câu trả lời ``hợp lệ'' nghĩa là giá trị ẩn $Ms \bmod N$ nằm trong khoảng PKCS\#1 $[2B,\,3B-1]$. Lặp qua các hệ số $s$ được chọn và giao các ràng buộc này sẽ thu nhỏ tập ứng viên của $M$ cho đến khi chỉ còn bản rõ thật --- biến một phép kiểm tra hợp lệ một bit thành một oracle giải mã hoàn chỉnh.
 \end{minipage}%
 }
-\caption{Tấn công Bleichenbacher biến phép kiểm tra tính hợp lệ thành một oracle giải mã.}
+\caption{Tấn công Bleichenbacher là một vòng lặp phản hồi thích nghi: mỗi bit oracle thu hẹp khoảng phải chứa bản rõ.}
 \end{figure}
 
 \subsection{Vì sao điều này quan trọng}
 
-Tấn công Bleichenbacher quan trọng vì nó thay đổi cách người ta nhìn nhận về an toàn của hệ mã. Bản thân hàm RSA không bị phá. Sự thất bại đến từ tương tác giữa:
+Tấn công Bleichenbacher thay đổi cách người ta nhìn nhận an toàn của hệ mã. Bản thân hàm RSA không bị phá. Sự thất bại đến từ tương tác giữa:
 
 \begin{itemize}
-\item cấu trúc đệm,
-\item cài đặt có kiểm tra tính hợp lệ,
-\item và sự khác biệt hành vi có thể quan sát được từ bên ngoài.
+\item cấu trúc đệm định nghĩa một định dạng ``hợp lệ'' nhận biết được,
+\item một cài đặt có kiểm tra định dạng đó, và
+\item một khác biệt hành vi quan sát được từ bên ngoài giữa trường hợp hợp lệ và không hợp lệ.
 \end{itemize}
 
-Đây là một bài học mạnh mẽ trong mật mã học. Một hệ thống có thể được xây dựng từ những thành phần toán học rất mạnh, nhưng vẫn trở nên mất an toàn nếu cài đặt của nó làm rò rỉ thông tin từng phần. Trong kỹ nghệ an toàn hiện đại, khả năng chống side channel, chống rò rỉ qua thông báo lỗi và chống tấn công bản mã được chọn thích nghi quan trọng không kém gì độ khó của bài toán lý thuyết số nền tảng.
+Đây là một bài học mạnh mẽ. Một hệ thống có thể được dựng từ những thành phần toán học rất mạnh nhưng vẫn mất an toàn nếu cài đặt làm rò rỉ thông tin từng phần. Tấn công này còn tỏ ra bền bỉ đáng kể: gần hai thập kỷ sau, các biến thể như \textbf{DROWN} (2016, khai thác SSLv2 cũ) và \textbf{ROBOT} --- ``Return Of Bleichenbacher's Oracle Threat'' (2017) --- cho thấy cùng oracle đó vẫn tồn tại trong các thư viện TLS được triển khai rộng rãi, vì PKCS\#1 v1.5 rất khó cài đặt mà không để lộ một kênh phụ về thời gian hoặc thông báo lỗi.
 
-Vì lý do đó, tấn công Bleichenbacher không chỉ là một ví dụ lịch sử. Nó là minh họa kinh điển cho việc \textbf{rò rỉ ở mức cài đặt có thể phá hủy hoàn toàn một nguyên thủy vốn mạnh về mặt toán học}, và nó đã thúc đẩy mạnh mẽ việc chuyển sang những cơ chế đệm vững chắc hơn như OAEP.
+Vì lý do đó, tấn công Bleichenbacher không chỉ là một ví dụ lịch sử. Nó là minh họa kinh điển cho việc \textbf{rò rỉ ở mức cài đặt có thể phá hủy hoàn toàn một nguyên thủy vốn mạnh về toán học}, và nó đã thúc đẩy mạnh mẽ việc chuyển sang các cách mã hóa chứng minh được an toàn CCA như OAEP, cũng như sang các cài đặt thời gian hằng và chống rò rỉ nói chung.

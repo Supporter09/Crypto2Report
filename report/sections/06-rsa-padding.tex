@@ -6,7 +6,7 @@ is deterministic and algebraically structured. To convert RSA into a practical e
 
 \subsection{Why Padding Is Needed}
 
-Padding serves two essential purposes. First, it introduces \textbf{randomness}, ensuring that the same message does not always encrypt to the same ciphertext. Second, it adds \textbf{structure}, so malformed or manipulated inputs can be recognized and rejected.
+Padding serves two essential purposes. First, it introduces \textbf{randomness}, ensuring that the same message does not always encrypt to the same ciphertext. Second, it adds \textbf{structure}, so that malformed or manipulated inputs can be recognized and rejected after decryption.
 
 Conceptually, padding changes the encryption process from
 \[
@@ -14,54 +14,85 @@ C = M^e \bmod N
 \]
 to
 \[
-C = \operatorname{RSA}(\operatorname{Pad}(M;r)),
+C = \operatorname{RSA}\bigl(\operatorname{Pad}(M;r)\bigr) = \operatorname{Pad}(M;r)^e \bmod N,
 \]
-where $r$ is fresh randomness. Because the RSA function is then applied to a randomized encoding of the message rather than to the message directly, simple equality tests, dictionary attacks, and several structural attacks become much harder.
+where $r$ is fresh randomness drawn independently for every encryption. Because the RSA permutation is now applied to a randomized encoding of the message rather than to the message itself, the determinism and the multiplicative structure exploited against textbook RSA no longer translate into useful attacks: equality tests, dictionary attacks, small-message root extraction, and chosen-ciphertext manipulation all become much harder.
+
+A useful way to state the design goal is that padding should turn RSA into a scheme that is \textbf{semantically secure}, and ideally secure against \textbf{adaptive chosen-ciphertext attacks} (IND-CCA2), so that an adversary learns nothing from a ciphertext even when allowed to query a decryption oracle on other ciphertexts.
 
 \subsection{PKCS\#1 v1.5}
 
-One historically important padding scheme is \textbf{PKCS\#1 v1.5}. Before RSA encryption, the plaintext is embedded into a structured block of the form
+One historically important padding scheme is \textbf{PKCS\#1 v1.5}. Let $k$ be the byte length of the modulus $N$. Before RSA encryption, a message $M$ of $\mathrm{mLen}$ bytes is embedded into a $k$-byte encoded block of the form
 \[
-02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{\mathtt{02}}_{1}\,\|\,\underbrace{\text{PS}}_{\ge 8}\,\|\,\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{M}_{\mathrm{mLen}} .
 \]
-The leading bytes indicate that the block is intended for encryption, the random padding introduces nondeterminism, and the separator byte marks where the actual message begins.
+The components have specific roles:
 
-This design was widely deployed in practice and was a major improvement over textbook RSA. However, it was later shown to be vulnerable to adaptive chosen-ciphertext attacks when implementations leaked whether the decrypted block had valid PKCS\#1 formatting. Thus, PKCS\#1 v1.5 illustrates an important theme in cryptography: an encoding rule can look strong on paper but still fail when combined with an informative implementation.
+\begin{itemize}
+\item the leading \texttt{00} guarantees that the block, read as an integer, is smaller than $N$;
+\item the block type byte \texttt{02} signals that the block is intended for \emph{encryption};
+\item the padding string PS consists of \textbf{nonzero} random bytes and must be at least $8$ bytes long, which is what supplies the randomness;
+\item the \texttt{00} separator marks the end of the padding and the start of the message.
+\end{itemize}
+
+Because PS must occupy at least $8$ bytes and the fixed bytes occupy $3$ more, the message length is bounded by $\mathrm{mLen} \le k - 11$. To decrypt, one computes $C^d \bmod N$, re-expresses it as a $k$-byte block, and checks that it has the expected \texttt{00 02} prefix, a nonzero padding region, and a \texttt{00} separator; the message is whatever follows.
+
+This design was widely deployed and was a major improvement over textbook RSA. However, it was later shown to be vulnerable to adaptive chosen-ciphertext attacks whenever an implementation revealed whether a decrypted block had valid PKCS\#1 formatting (see Section~7). PKCS\#1 v1.5 therefore illustrates a recurring theme in cryptography: an encoding rule can look strong on paper yet still fail when combined with an implementation that leaks even one bit about the decrypted value.
 
 \subsection{OAEP}
 
-A more modern and principled design is \textbf{Optimal Asymmetric Encryption Padding (OAEP)}. OAEP preprocesses the message using randomness together with hash-based masking operations before the RSA exponentiation is applied. At a high level, it:
+A more modern and principled design is \textbf{Optimal Asymmetric Encryption Padding (OAEP)}, introduced by Bellare and Rogaway. OAEP preprocesses the message using fresh randomness together with two hash-based mask generation functions, denoted $G$ and $H$, before the RSA exponentiation is applied. At a high level it:
 
 \begin{itemize}
-\item adds fresh randomness to every encryption,
-\item mixes the message and the random seed through mask generation functions, and
-\item produces a structured RSA input that is difficult to manipulate meaningfully.
+\item adds a fresh random seed to every encryption,
+\item mixes the message and the seed through a two-round Feistel-like network built from $G$ and $H$, and
+\item produces a structured RSA input in which every output bit depends on the entire message and seed.
 \end{itemize}
 
-In schematic form, OAEP can be viewed as
+Concretely, let $\mathrm{hLen}$ be the output length of the hash and $k$ the byte length of $N$. The message is first formatted into a data block
 \[
-\text{message} + \text{random seed}
-\longrightarrow
-\text{masked block}
-\longrightarrow
-\text{RSA input}.
+\mathrm{DB} = \mathrm{lHash} \,\|\, \mathrm{PS} \,\|\, \mathtt{01} \,\|\, M,
 \]
-This design aims to remove both the determinism and the simple algebraic transparency of textbook RSA.
+where $\mathrm{lHash}$ is the hash of an optional label and $\mathrm{PS}$ is a run of zero bytes. A random seed of length $\mathrm{hLen}$ is then drawn, and the encoded message is computed as
+\begin{align*}
+\text{maskedDB} &= \mathrm{DB} \oplus G(\text{seed}), \\
+\text{maskedSeed} &= \text{seed} \oplus H(\text{maskedDB}), \\
+\mathrm{EM} &= \mathtt{00} \,\|\, \text{maskedSeed} \,\|\, \text{maskedDB},
+\end{align*}
+and $\mathrm{EM}$ is the integer fed into the RSA permutation. Decryption simply reverses the two rounds: $H$ recovers the seed from maskedSeed and maskedDB, then $G$ recovers DB, after which the formatting of DB is verified.
 
 \begin{figure}[h]
 \centering
-\begin{tikzpicture}[>=Latex]
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.3cm,minimum height=0.9cm] (m) at (0,0) {message};
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (r) at (3.6,0) {random seed};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (mask) at (8.0,0) {masking and hashing};
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (rsa) at (12.4,0) {RSA input};
-    \draw[->,thick] (m.east) -- (r.west);
-    \draw[->,thick] (r.east) -- (mask.west);
-    \draw[->,thick] (mask.east) -- (rsa.west);
+\begin{tikzpicture}[>=Latex,node distance=0.6cm]
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (db)   at (0,4)   {DB ($\mathrm{lHash}\|\mathrm{PS}\|\mathtt{01}\|M$)};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.0cm,minimum height=0.9cm] (seed) at (6.4,4) {seed (random)};
+
+    \node[draw,circle,inner sep=1.5pt] (x1) at (0,2.4) {$\oplus$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=1.0cm,minimum height=0.8cm] (G) at (3.2,2.4) {$G$};
+
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (mdb) at (0,1.0) {maskedDB};
+
+    \node[draw,rounded corners,fill=gray!10,minimum width=1.0cm,minimum height=0.8cm] (H) at (3.2,1.0) {$H$};
+    \node[draw,circle,inner sep=1.5pt] (x2) at (6.4,1.0) {$\oplus$};
+
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (mseed) at (6.4,-0.4) {maskedSeed};
+
+    \node[draw,rounded corners,fill=gray!12,minimum width=7.2cm,minimum height=0.9cm] (em) at (3.2,-1.9) {$\mathrm{EM}=\mathtt{00}\,\|\,\text{maskedSeed}\,\|\,\text{maskedDB}$};
+
+    \draw[->,thick] (db.south) -- (x1.north);
+    \draw[->,thick] (seed.south) .. controls (6.4,3.0) and (4.2,2.4) .. (G.east);
+    \draw[->,thick] (G.west) -- (x1.east);
+    \draw[->,thick] (x1.south) -- (mdb.north);
+    \draw[->,thick] (mdb.east) -- (H.west);
+    \draw[->,thick] (H.east) -- (x2.west);
+    \draw[->,thick] (seed.east) .. controls (7.6,4) and (7.6,1.0) .. (x2.east);
+    \draw[->,thick] (x2.south) -- (mseed.north);
+    \draw[->,thick] (mdb.south) .. controls (0,-1.0) .. (em.north west);
+    \draw[->,thick] (mseed.south) -- (em.north east);
 \end{tikzpicture}
-\caption{OAEP preprocesses the plaintext with randomness before RSA is applied.}
+\caption{OAEP combines the data block DB and a random seed through two mask generation functions $G$ and $H$ before RSA is applied. Each output bit of $\mathrm{EM}$ depends on the whole message and the whole seed.}
 \end{figure}
 
-OAEP is important because it comes with stronger theoretical guarantees. In the random oracle model, it provides significantly better resistance to chosen-ciphertext attacks than textbook RSA and than older ad hoc encodings.
+OAEP is important because it comes with stronger theoretical guarantees. The construction has the \emph{all-or-nothing} property: flipping a single bit of $\mathrm{EM}$ scrambles the recovered seed and data block unpredictably, so an attacker cannot transform a valid ciphertext into another valid one. In the random oracle model, RSA-OAEP is provably \textbf{IND-CCA2 secure} under the RSA assumption, which is precisely the resistance to adaptive chosen-ciphertext attacks that PKCS\#1 v1.5 lacked.
 
-The broader lesson is that \textbf{secure RSA encryption is not just ``RSA plus a message''}. It is RSA combined with a carefully designed randomized encoding procedure. Without that preprocessing step, the trapdoor permutation remains mathematically interesting but cryptographically unsafe.
+The broader lesson is that \textbf{secure RSA encryption is not just ``RSA plus a message''}. It is the RSA permutation composed with a carefully designed randomized encoding procedure. Without that preprocessing step, the trapdoor permutation remains mathematically elegant but cryptographically unsafe.

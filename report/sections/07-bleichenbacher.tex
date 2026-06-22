@@ -1,77 +1,87 @@
-Among the most influential practical attacks on RSA encryption is the \textbf{Bleichenbacher attack} from 1998. It targeted implementations of RSA with PKCS\#1 v1.5 padding and demonstrated that even mathematically strong primitives can fail when an implementation leaks small amounts of information about decrypted data.
+Among the most influential practical attacks on RSA encryption is the \textbf{Bleichenbacher attack}, published by Daniel Bleichenbacher in 1998. It targeted implementations of RSA with PKCS\#1 v1.5 padding---including the RSA key-exchange used in SSL/TLS---and demonstrated that even a mathematically strong primitive can fail when an implementation leaks a single bit of information about decrypted data.
 
 \subsection{Background}
 
-PKCS\#1 v1.5 was widely used in early web and protocol implementations. A valid decrypted block for encryption had to begin with a specific format, typically
-\[
-02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
-\]
-Servers often checked whether the decrypted block satisfied this rule before continuing the protocol. If the padding was invalid, the implementation might terminate with an error or respond differently from the valid case.
+PKCS\#1 v1.5 was widely used in early web and protocol implementations. As described in Section~6, a valid decrypted block for encryption must begin with the bytes \texttt{00 02}, followed by at least eight nonzero padding bytes, a \texttt{00} separator, and the message. Servers typically checked whether the decrypted block satisfied this format before continuing the protocol. If the padding was invalid, the implementation often terminated with an error or otherwise behaved observably differently from the valid case.
 
-This difference in behavior created the opening for Bleichenbacher's attack. The attacker did not need the private key, nor did the attacker need to break RSA directly. Instead, the attacker exploited the server's reaction to carefully modified ciphertexts.
+This difference in behavior created the opening for Bleichenbacher's attack. The attacker does not need the private key, nor does the attacker need to break RSA directly. Instead, the attacker exploits the server's reaction to carefully modified ciphertexts.
 
-\subsection{Oracle Idea}
+\subsection{The Padding Oracle}
 
-The attack relies on a \textbf{padding oracle}. A padding oracle is any mechanism that tells the attacker whether a decrypted plaintext satisfies the required PKCS\#1 structure. For example:
+The attack relies on a \textbf{padding oracle}: any mechanism that tells the attacker whether a decrypted plaintext satisfies the required PKCS\#1 structure. For example,
 
 \begin{itemize}
-\item valid padding $\rightarrow$ the server continues processing,
+\item valid padding $\rightarrow$ the server continues processing (or responds slowly, or returns a different error),
 \item invalid padding $\rightarrow$ the server returns an error or behaves differently.
 \end{itemize}
 
-Even this single bit of information is enough to be dangerous. Each oracle response reveals whether the unknown plaintext lies inside or outside a particular set of values compatible with valid PKCS formatting.
+Even this single bit of information is enough to be dangerous. Because a conforming block starts with \texttt{00 02}, ``padding is valid'' tells the attacker that the decrypted integer lies in a narrow, predictable range, and each query refines what the attacker knows about the hidden plaintext.
 
 \subsection{Attack Flow}
 
+Let $k$ be the byte length of $N$ and define
+\[
+B = 2^{8(k-2)}.
+\]
+A plaintext $m$ whose encoding begins with the bytes \texttt{00 02} satisfies, as an integer,
+\[
+2B \le m \le 3B - 1 .
+\]
+This interval is exactly what a positive oracle answer reveals.
+
 Suppose the attacker intercepts a target ciphertext
 \[
-C = M^e \bmod N.
+C = M^e \bmod N .
 \]
-The attacker then chooses a multiplier $s$ and forms a modified ciphertext
+The attacker chooses a multiplier $s$ and forms a modified ciphertext
 \[
-C' = C \cdot s^e \bmod N.
+C' = C \cdot s^e \bmod N .
 \]
-When the server decrypts $C'$, it obtains
+By the multiplicative property of RSA, when the server decrypts $C'$ it obtains
 \[
-M' = Ms \bmod N.
+M' = M s \bmod N .
 \]
-The oracle response tells the attacker whether $M'$ has valid PKCS\#1 v1.5 formatting.
-
-This process is repeated many times with carefully chosen values of $s$. Each successful or unsuccessful query narrows the interval in which the original plaintext $M$ must lie. Over time, the attacker intersects these intervals until only one plausible plaintext remains. The attack is therefore not a direct algebraic inversion of RSA; it is an adaptive narrowing process driven by oracle feedback.
+The oracle then reveals whether $M'$ is PKCS\#1 conforming, i.e.\ whether
+\[
+2B \le M s - r N \le 3B - 1 \quad\text{for some integer } r .
+\]
+Each conforming value of $s$ yields a linear constraint of this form and therefore pins $M$ down to a union of subintervals of $[2B, 3B-1]$. By searching for successive multipliers $s$ in a structured way and intersecting the resulting constraints, the attacker repeatedly halves the set of candidate values until a single interval of width one remains; its endpoint is the original plaintext $M$. The attack is therefore not a direct algebraic inversion of RSA but an \textbf{adaptive interval-narrowing search} driven by oracle feedback, typically requiring on the order of tens of thousands to a few million queries depending on the variant.
 
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}[>=Latex]
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.7cm,minimum height=0.9cm] (att) at (0,0) {Attacker};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.2cm,minimum height=0.9cm] (mod) at (4.4,0) {modify $C$ to $C'$};
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (srv) at (8.6,0) {Server};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.0cm,minimum height=0.9cm] (resp) at (12.9,0) {valid or invalid?};
-    \draw[->,thick] (att.east) -- (mod.west);
-    \draw[->,thick] (mod.east) -- node[above]{$C'$} (srv.west);
-    \draw[->,thick] (srv.east) -- (resp.west);
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (att) at (0,1.4)  {Attacker: pick multiplier $s$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (form) at (7.2,1.4) {form $C'=C\cdot s^{e}\bmod N$};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (srv) at (7.2,-1.4) {Server: decrypt, check PKCS\#1};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.4cm,minimum height=1.0cm] (nar) at (0,-1.4)  {narrow interval(s) for $M$};
+
+    \draw[->,thick] (att.east) -- node[above]{$s$} (form.west);
+    \draw[->,thick] (form.south) -- node[right]{send $C'$} (srv.north);
+    \draw[->,thick] (srv.west) -- node[below]{valid / invalid} (nar.east);
+    \draw[->,thick] (nar.north) -- node[left]{update $s$} (att.south);
 \end{tikzpicture}
 
-\vspace{0.5em}
+\vspace{0.6em}
 
 \fbox{%
-\begin{minipage}{0.86\linewidth}
+\begin{minipage}{0.88\linewidth}
 \centering
-\textbf{Core idea:} each oracle response leaks whether the hidden plaintext falls inside a valid PKCS\#1 interval, allowing the attacker to shrink the set of possible messages until the original plaintext is recovered.
+\textbf{Core idea:} a ``valid'' answer means the hidden value $Ms \bmod N$ lies in the PKCS\#1 interval $[2B,\,3B-1]$. Looping over chosen multipliers $s$ and intersecting these constraints shrinks the candidate set for $M$ until only the true plaintext remains---turning a one-bit validity check into a full decryption oracle.
 \end{minipage}%
 }
-\caption{Bleichenbacher's attack turns a validity check into a decryption oracle.}
+\caption{Bleichenbacher's attack is an adaptive feedback loop: each oracle bit narrows the interval that must contain the plaintext.}
 \end{figure}
 
 \subsection{Why This Matters}
 
-The Bleichenbacher attack matters because it changed how practitioners think about encryption security. The RSA function itself was not broken. Instead, the failure came from the interaction between:
+The Bleichenbacher attack changed how practitioners think about encryption security. The RSA function itself was not broken. Instead, the failure came from the interaction between:
 
 \begin{itemize}
-\item structured padding,
-\item an implementation that checked validity, and
-\item an externally visible difference in behavior.
+\item structured padding that defines a recognizable ``valid'' format,
+\item an implementation that checks that format, and
+\item an externally visible difference in behavior between the valid and invalid cases.
 \end{itemize}
 
-This is a powerful lesson in cryptography. A system may be built from strong mathematical components, yet still become insecure if its implementation leaks partial information. In modern security engineering, resistance to side channels, error-message leakage, and adaptive chosen-ciphertext behavior is just as important as the hardness of the underlying number-theoretic problem.
+This is a powerful lesson. A system may be built from strong mathematical components yet still become insecure if its implementation leaks partial information. The attack also proved remarkably durable: nearly two decades later, variants such as \textbf{DROWN} (2016, exploiting legacy SSLv2) and \textbf{ROBOT} --- ``Return Of Bleichenbacher's Oracle Threat'' (2017) --- showed that the same oracle persisted in widely deployed TLS stacks, because PKCS\#1 v1.5 is hard to implement without some timing or error-message side channel.
 
-For this reason, Bleichenbacher's attack is more than a historical curiosity. It is a classic example of how \textbf{implementation-level leakage can completely defeat a mathematically sound primitive}, and it strongly motivated the move toward more robust padding schemes such as OAEP.
+For this reason, Bleichenbacher's attack is far more than a historical curiosity. It is the classic example of how \textbf{implementation-level leakage can completely defeat a mathematically sound primitive}, and it strongly motivated the move toward provably CCA-secure encodings such as OAEP and, more broadly, toward constant-time, leakage-resistant implementations.
