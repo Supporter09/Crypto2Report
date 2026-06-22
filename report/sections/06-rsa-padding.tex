@@ -22,10 +22,16 @@ A useful way to state the design goal is that padding should turn RSA into a sch
 
 \subsection{PKCS\#1 v1.5}
 
-One historically important padding scheme is \textbf{PKCS\#1 v1.5}. Let $k$ be the byte length of the modulus $N$. Before RSA encryption, a message $M$ of $\mathrm{mLen}$ bytes is embedded into a $k$-byte encoded block of the form
+One historically important padding scheme is \textbf{PKCS\#1 v1.5}. Here $k$ denotes the \emph{byte length of the modulus} $N$, i.e.\ the number of bytes needed to write $N$,
 \[
-\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{\mathtt{02}}_{1}\,\|\,\underbrace{\text{PS}}_{\ge 8}\,\|\,\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{M}_{\mathrm{mLen}} .
+k = \left\lceil \frac{\log_2 N}{8} \right\rceil ,
 \]
+so that any $k$-byte string can be read as an integer in the range $[0, N)$ and fed directly into the RSA operation. Before RSA encryption, a message $M$ of $\mathrm{mLen}$ bytes is embedded into an encoded block $\mathrm{EM}$ of exactly $k$ bytes,
+\[
+\mathrm{EM} = \underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{\mathtt{02}}_{1}\,\|\,\underbrace{\text{PS}}_{\ge 8}\,\|\,\underbrace{\mathtt{00}}_{1}\,\|\,\underbrace{M}_{\mathrm{mLen}} ,
+\qquad |\mathrm{EM}| = k ,
+\]
+where $\|$ denotes byte concatenation and each underbrace gives the length of that field in bytes.
 The components have specific roles:
 
 \begin{itemize}
