@@ -69,7 +69,7 @@ Then
 \[
 C \equiv K_1^e K_2^e \pmod{N}.
 \]
-An attacker can use a meet-in-the-middle strategy:
+Not every key factors this way; a prime session key, for instance, admits no such split. The attack therefore succeeds only for the fraction of keys whose factors both fall below the chosen bound, and that bound is taken as $2^{34}$ rather than $2^{32}$ precisely to capture more such keys. For those keys, an attacker can use a meet-in-the-middle strategy:
 
 \begin{enumerate}
 \item Precompute a table of values derived from one side, such as
