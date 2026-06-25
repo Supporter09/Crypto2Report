@@ -4,7 +4,7 @@ Among the most influential practical attacks on RSA encryption is the \textbf{Bl
 
 PKCS\#1 v1.5 was widely used in early web and protocol implementations. A valid decrypted block for encryption had to begin with a specific format, typically
 \[
-02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+00 \,\|\, 02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
 \]
 Servers often checked whether the decrypted block satisfied this rule before continuing the protocol. If the padding was invalid, the implementation might terminate with an error or respond differently from the valid case.
 

@@ -4,7 +4,7 @@ Một trong những tấn công thực tế có ảnh hưởng sâu rộng nhấ
 
 PKCS\#1 v1.5 từng được sử dụng rộng rãi trong các giao thức mạng và phần mềm thời kỳ đầu. Một khối hợp lệ sau khi giải mã phải bắt đầu bằng một định dạng xác định, thường là
 \[
-02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+00 \,\|\, 02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
 \]
 Máy chủ thường kiểm tra xem khối sau giải mã có thỏa mãn định dạng này hay không trước khi tiếp tục giao thức. Nếu phần đệm không hợp lệ, cài đặt có thể dừng lại với lỗi hoặc phản hồi khác với trường hợp hợp lệ.
 

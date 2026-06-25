@@ -22,7 +22,7 @@ where $r$ is fresh randomness. Because the RSA function is then applied to a ran
 
 One historically important padding scheme is \textbf{PKCS\#1 v1.5}. Before RSA encryption, the plaintext is embedded into a structured block of the form
 \[
-02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
+00 \,\|\, 02 \,\|\, \text{random pad} \,\|\, 00 \,\|\, \text{message}.
 \]
 The leading bytes indicate that the block is intended for encryption, the random padding introduces nondeterminism, and the separator byte marks where the actual message begins.
 
@@ -51,11 +51,11 @@ This design aims to remove both the determinism and the simple algebraic transpa
 \begin{figure}[h]
 \centering
 \begin{tikzpicture}[>=Latex]
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.3cm,minimum height=0.9cm] (m) at (0,0) {message};
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (r) at (3.6,0) {random seed};
-    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (mask) at (8.0,0) {masking and hashing};
-    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (rsa) at (12.4,0) {RSA input};
-    \draw[->,thick] (m.east) -- (r.west);
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.3cm,minimum height=0.9cm] (m) at (0,0.8) {message};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.4cm,minimum height=0.9cm] (r) at (0,-0.8) {random seed};
+    \node[draw,rounded corners,fill=gray!10,minimum width=3.3cm,minimum height=0.9cm] (mask) at (5.2,0) {masking and hashing};
+    \node[draw,rounded corners,fill=gray!10,minimum width=2.6cm,minimum height=0.9cm] (rsa) at (10.2,0) {RSA input};
+    \draw[->,thick] (m.east) -- (mask.west);
     \draw[->,thick] (r.east) -- (mask.west);
     \draw[->,thick] (mask.east) -- (rsa.west);
 \end{tikzpicture}
